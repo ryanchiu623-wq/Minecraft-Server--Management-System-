@@ -1,0 +1,43 @@
+# 關閉伺服器的二次確認
+# 只能從管理面板點進來，沒有開啟指令
+
+open_command: []
+size: 27
+menu_title: '&4&l確定要關閉伺服器嗎？'
+
+open_requirement:
+  requirements:
+    perm:
+      type: has permission
+      permission: serverpanel.admin
+
+items:
+
+  'warning':
+    material: BARRIER
+    slot: 4
+    display_name: '&c&l所有玩家都會被斷線'
+    lore:
+      - '&7世界會先存檔，不會掉進度'
+      - '&7之後要重開得回到電腦前，'
+      - '&7或用 Discord 的 &f/start'
+
+  'confirm':
+    material: RED_CONCRETE
+    slot: 11
+    display_name: '&4&l確定關閉'
+    lore:
+      - '&7存檔後立刻關機'
+    left_click_commands:
+      - '[message] &c伺服器即將關閉…'
+      - '[console] save-all'
+      - '[console] stop'
+
+  'cancel':
+    material: LIME_CONCRETE
+    slot: 15
+    display_name: '&a&l取消'
+    lore:
+      - '&7返回管理面板'
+    left_click_commands:
+      - '[openguimenu] admin_panel'

@@ -1,0 +1,100 @@
+# 行動工作站
+# 不用放方塊就能開啟的工作介面
+# 開啟方式：/stations 或 /st　權限：serverpanel.toolbox
+
+open_command:
+  - stations
+  - st
+
+size: 18
+menu_title: '&8&l行動工作站'
+
+open_requirement:
+  requirements:
+    perm:
+      type: has permission
+      permission: serverpanel.toolbox
+
+items:
+
+  'workbench':
+    material: CRAFTING_TABLE
+    slot: 1
+    display_name: '&6&l工作台'
+    lore:
+      - '&7隨時隨地合成'
+    left_click_commands:
+      - '[player] mobile workbench'
+
+  'enderchest':
+    material: ENDER_CHEST
+    slot: 2
+    display_name: '&5&l終界箱'
+    lore:
+      - '&7你自己的跨次元收納'
+    left_click_commands:
+      - '[player] mobile enderchest'
+
+  'anvil':
+    material: ANVIL
+    slot: 3
+    display_name: '&7&l鐵砧'
+    lore:
+      - '&7命名與修理，仍需消耗經驗'
+    left_click_commands:
+      - '[player] mobile anvil'
+
+  'enchanting':
+    material: ENCHANTING_TABLE
+    slot: 4
+    display_name: '&d&l附魔台'
+    lore:
+      - '&7虛擬附魔台沒有旁邊的書櫃加成'
+    left_click_commands:
+      - '[player] mobile enchanting'
+
+  'grindstone':
+    material: GRINDSTONE
+    slot: 5
+    display_name: '&8&l砂輪'
+    lore:
+      - '&7移除附魔、修理工具'
+    left_click_commands:
+      - '[player] mobile grindstone'
+
+  'stonecutter':
+    material: STONECUTTER
+    slot: 6
+    display_name: '&7&l切石機'
+    left_click_commands:
+      - '[player] mobile stonecutter'
+
+  'smithing':
+    material: SMITHING_TABLE
+    slot: 7
+    display_name: '&b&l鍛造台'
+    lore:
+      - '&7升級裝備、套用紋飾'
+    left_click_commands:
+      - '[player] mobile smithing'
+
+  'loom':
+    material: LOOM
+    slot: 11
+    display_name: '&e&l織布機'
+    left_click_commands:
+      - '[player] mobile loom'
+
+  'cartography':
+    material: CARTOGRAPHY_TABLE
+    slot: 12
+    display_name: '&2&l製圖台'
+    left_click_commands:
+      - '[player] mobile cartography'
+
+  'back':
+    material: ARROW
+    slot: 17
+    display_name: '&7&l返回工具箱'
+    left_click_commands:
+      - '[openguimenu] toolbox'

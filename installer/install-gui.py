@@ -13,6 +13,7 @@ too, in which case it uses the files sitting next to the repository root.
 """
 
 import ctypes
+import io
 import json
 import os
 import queue
@@ -26,6 +27,9 @@ import threading
 import tkinter as tk
 import urllib.request
 from tkinter import filedialog, messagebox, ttk
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import plugins as plugcat  # noqa: E402
 
 APP_TITLE = "Minecraft Server Toolkit 安裝程式"
 PAPER_API = "https://fill.papermc.io/v3/projects/paper"
@@ -256,6 +260,24 @@ class Installer(tk.Tk):
                        "選單本身由 DeluxeMenus 提供，要另外裝。"
                   ).pack(anchor="w")
 
+        # --- plugins ---
+        plug = ttk.LabelFrame(root, text=" 外掛 ", padding=self.PAD)
+        plug.pack(fill="x", pady=6)
+        self.plug_vars = {}
+        grid = ttk.Frame(plug)
+        grid.pack(fill="x")
+        for i, item in enumerate(plugcat.CATALOGUE):
+            var = tk.BooleanVar(value=item.default)
+            self.plug_vars[item.key] = var
+            ttk.Checkbutton(grid, variable=var,
+                            text="%s　%s" % (item.name, item.note)
+                            ).grid(row=i // 2, column=i % 2, sticky="w",
+                                   padx=(0, self.px(16)))
+        ttk.Label(plug, foreground="#666", wraplength=self.px(740),
+                  text="下列無法自動下載，需要時請自行到官網取得："
+                       + "、".join(n for n, _ in plugcat.MANUAL)
+                  ).pack(anchor="w", pady=(6, 0))
+
         # --- options ---
         opts = ttk.LabelFrame(root, text=" 設定與自動化 ", padding=self.PAD)
         opts.pack(fill="x", pady=6)
@@ -405,6 +427,10 @@ class Installer(tk.Tk):
                 ("copy", True),
                 ("paper", self.var_paper.get()),
                 ("panelkey", self.var_panelkey.get()),
+                ("plugins",
+                 any(v.get() for v in self.plug_vars.values())),
+                ("menus", self.var_panelkey.get()
+                 and self.plug_vars["deluxemenus"].get()),
                 ("rcon", self.var_rcon.get()),
                 ("config", True),
                 ("tasks", self.var_tasks.get()),
@@ -509,6 +535,105 @@ class Installer(tk.Tk):
         self.say("  已安裝 %s" % jar)
         self.say("  /menu 需要 DeluxeMenus，%panelkey_target% 需要 "
                  "PlaceholderAPI——兩者都要自己裝")
+
+    def _step_plugins(self, server, backup, toolkit, port):
+        self.say("下載外掛 …")
+        plugins_dir = os.path.join(server, "plugins")
+        for item in plugcat.CATALOGUE:
+            if not self.plug_vars[item.key].get():
+                continue
+            try:
+                filename, label = plugcat.download(
+                    item, plugins_dir,
+                    progress=lambda f: self._post("progress", int(f * 100)))
+                self.say("  OK  %-15s %s  (%s)" % (item.name, filename, label))
+            except Exception as exc:
+                self.say("  --  %-15s %s" % (item.name, str(exc)[:70]))
+        if self.plug_vars["geyser"].get():
+            self._geyser_auth(server)
+        self.say("  外掛要重新啟動伺服器才會載入")
+
+    def _geyser_auth(self, server):
+        """Point Geyser at Floodgate.
+
+        Geyser defaults to online auth, which asks Bedrock players for a Java
+        account - the exact thing Floodgate exists to avoid, and the step
+        people most often miss. The config only appears after a first run, so
+        patch it when present and say so loudly when not.
+        """
+        cfg = os.path.join(server, "plugins", "Geyser-Spigot", "config.yml")
+        if not os.path.exists(cfg):
+            self.say("  ! Geyser 第一次啟動後，要把 config.yml 的 auth-type "
+                     "改成 floodgate，基岩版朋友才不用 Java 帳號")
+            return
+        try:
+            text = io.open(cfg, encoding="utf-8", errors="replace").read()
+            if re.search(r"auth-type:\s*floodgate", text):
+                self.say("  Geyser 的 auth-type 已經是 floodgate")
+                return
+            shutil.copy2(cfg, cfg + ".bak")
+            io.open(cfg, "w", encoding="utf-8").write(
+                re.sub(r"auth-type:\s*\S+", "auth-type: floodgate", text,
+                       count=1))
+            self.say("  已把 Geyser 的 auth-type 改為 floodgate"
+                     "（原檔備份為 .bak）")
+        except OSError as exc:
+            self.say("  ! 無法修改 Geyser 設定：%s" % exc)
+
+    def _step_menus(self, server, backup, toolkit, port):
+        self.say("安裝管理選單 …")
+        source = os.path.join(bundle_dir(), "bundled", "deluxemenus")
+        if not os.path.isdir(source):
+            self.say("  安裝程式內沒有選單檔，跳過")
+            return
+        dest = os.path.join(server, "plugins", "DeluxeMenus", "gui_menus")
+        os.makedirs(dest, exist_ok=True)
+        names = []
+        for f in sorted(os.listdir(source)):
+            if f.endswith(".yml"):
+                shutil.copy2(os.path.join(source, f), os.path.join(dest, f))
+                names.append(os.path.splitext(f)[0])
+        self.say("  已複製 %d 份選單：%s" % (len(names), "、".join(names)))
+        self._register_menus(server, names)
+
+    def _register_menus(self, server, names):
+        """Register the menus in DeluxeMenus' config.yml.
+
+        Nothing loads unless it is listed under gui_menus:, and that file only
+        appears after a first run - so all three states are handled, and an
+        existing config is backed up before being touched.
+        """
+        cfg = os.path.join(server, "plugins", "DeluxeMenus", "config.yml")
+        entry = "  %s:" + chr(10) + "    file: %s.yml" + chr(10)
+
+        if not os.path.exists(cfg):
+            os.makedirs(os.path.dirname(cfg), exist_ok=True)
+            body = "".join(entry % (n, n) for n in names)
+            io.open(cfg, "w", encoding="utf-8").write(
+                "check_updates: true" + chr(10) * 2 + "gui_menus:" + chr(10)
+                + body)
+            self.say("  已建立 config.yml 並註冊選單")
+            return
+
+        text = io.open(cfg, encoding="utf-8", errors="replace").read()
+        missing = [n for n in names
+                   if not re.search(r"^\s+%s:\s*$" % re.escape(n), text,
+                                    re.M)]
+        if not missing:
+            self.say("  選單已經註冊過了")
+            return
+
+        shutil.copy2(cfg, cfg + ".bak")
+        add = "".join(entry % (n, n) for n in missing)
+        if re.search(r"^gui_menus:\s*$", text, re.M):
+            text = re.sub(r"^gui_menus:\s*$",
+                          "gui_menus:" + chr(10) + add.rstrip(chr(10)),
+                          text, count=1, flags=re.M)
+        else:
+            text = text.rstrip(chr(10)) + chr(10) * 2 + "gui_menus:" \
+                + chr(10) + add
+        io.open(cfg, "w", encoding="utf-8").write(text)
+        self.say("  已註冊 %d 份選單（原檔備份為 .bak）" % len(missing))
 
     def _step_rcon(self, server, backup, toolkit, port):
         path = os.path.join(server, "server.properties")

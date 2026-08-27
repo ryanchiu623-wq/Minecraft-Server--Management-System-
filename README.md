@@ -26,6 +26,8 @@
 | **備份** | `windows/backup-world.ps1` | 暫停自動存檔 → 落盤 → 複製 → 壓縮 → 輪替 |
 | **看門狗** | `windows/watchdog.ps1` | 每 5 分鐘檢查，伺服器意外死掉就拉起來 |
 | **PanelKey 外掛** | `bundled/PanelKey-*.jar`<br>`bundled/panelkey-src/` | 遊戲內管理面板：`/menu`、`/spawn`、行動工作台、指定給予對象。含原始碼 |
+| **管理選單** | `bundled/deluxemenus/` | PanelKey 搭配的四份 DeluxeMenus 選單，安裝時會一併註冊 |
+| **外掛下載器** | `installer/plugins.py` | 從 Modrinth 與 GeyserMC 官方 API 取得外掛，安裝程式用 |
 | **地圖發布** | `windows/sync-map.ps1`<br>`windows/sync-loop.ps1` | 把 BlueMap 的靜態輸出推到 Cloudflare Pages |
 
 ---
@@ -47,7 +49,9 @@ pip install discord.py
 
 ### 用安裝程式（最省事）
 
-到 [Releases](../../releases) 下載 `MinecraftToolkitSetup.exe` 執行。它會檢查環境、下載 Paper、安裝內建的 PanelKey 外掛、開啟 RCON、寫好 `config.json`、註冊排程工作、建立防火牆規則和桌面捷徑。
+到 [Releases](../../releases) 下載 `MinecraftToolkitSetup.exe` 執行。它會檢查環境、下載 Paper、下載並安裝外掛（Geyser、Floodgate、BlueMap 等 9 個）、裝上內建的 PanelKey 與管理選單、開啟 RCON、寫好 `config.json`、註冊排程工作、建立防火牆規則和桌面捷徑。
+
+Citizens、Sentinel、InventoryStacks 沒有公開 API，安裝程式會列出來提醒你自行取得，而不是讓你裝完才發現少東西。
 
 需要系統管理員權限（防火牆規則要）。
 

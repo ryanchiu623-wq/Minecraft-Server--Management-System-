@@ -1,0 +1,150 @@
+# 伺服器管理面板
+# 開啟方式：/adminpanel 或 /ap
+# 權限：serverpanel.admin
+
+open_command:
+  - menu
+  - adminpanel
+
+size: 27
+menu_title: '&8&l伺服器管理面板'
+
+# 沒有這個權限的人連指令都不能用，選單也開不起來
+open_requirement:
+  requirements:
+    perm:
+      type: has permission
+      permission: serverpanel.admin
+
+items:
+
+  # ---------- 第一排：資訊 ----------
+  'status':
+    material: PAPER
+    slot: 4
+    display_name: '&f&l伺服器狀態'
+    lore:
+      - '&7線上人數 &f%server_online%&7/&f%server_max_players%'
+      - '&7伺服器 TPS &f%server_tps_1%'
+      - ''
+      - '&8點擊重新整理'
+    left_click_commands:
+      - '[refresh]'
+
+  'stations':
+    material: CRAFTING_TABLE
+    slot: 7
+    display_name: '&6&l行動工作站'
+    lore:
+      - '&7工作台、終界箱、鐵砧等'
+    left_click_commands:
+      - '[openguimenu] stations'
+
+  'toolbox':
+    material: CHEST
+    slot: 8
+    display_name: '&b&l行動工具箱'
+    lore:
+      - '&7指令方塊、除錯棒等'
+      - '&7只能用指令取得的物品'
+    left_click_commands:
+      - '[openguimenu] toolbox'
+
+  # ---------- 第二排：白名單與環境 ----------
+  'whitelist_on':
+    material: LIME_DYE
+    slot: 10
+    display_name: '&a&l開啟白名單'
+    lore:
+      - '&7只有名單內的玩家能進來'
+    left_click_commands:
+      - '[console] whitelist on'
+      - '[message] &a白名單已開啟'
+
+  'whitelist_off':
+    material: GRAY_DYE
+    slot: 11
+    display_name: '&7&l關閉白名單'
+    lore:
+      - '&c任何人都能進入伺服器'
+    left_click_commands:
+      - '[console] whitelist off'
+      - '[message] &e白名單已關閉，伺服器現在對所有人開放'
+
+  'time_day':
+    material: CLOCK
+    slot: 13
+    display_name: '&e&l設為白天'
+    left_click_commands:
+      - '[console] time set day'
+      - '[message] &e時間已設為白天'
+
+  'time_night':
+    material: BLACK_DYE
+    slot: 14
+    display_name: '&9&l設為夜晚'
+    left_click_commands:
+      - '[console] time set night'
+      - '[message] &9時間已設為夜晚'
+
+  'weather_clear':
+    material: SUNFLOWER
+    slot: 15
+    display_name: '&e&l放晴'
+    left_click_commands:
+      - '[console] weather clear'
+      - '[message] &e天氣已放晴'
+
+  'weather_rain':
+    material: WATER_BUCKET
+    slot: 16
+    display_name: '&b&l下雨'
+    left_click_commands:
+      - '[console] weather rain'
+      - '[message] &b開始下雨'
+
+  # ---------- 第三排：維護 ----------
+  'save':
+    material: ENDER_CHEST
+    slot: 19
+    display_name: '&a&l立即存檔'
+    lore:
+      - '&7把世界寫入磁碟'
+    left_click_commands:
+      - '[console] save-all'
+      - '[message] &a已送出存檔指令'
+
+  'render_map':
+    material: FILLED_MAP
+    slot: 21
+    display_name: '&2&l重新渲染地圖'
+    lore:
+      - '&7更新網頁地圖的內容'
+      - '&8渲染需要幾分鐘，之後才會上傳'
+    left_click_commands:
+      - '[console] bluemap update overworld'
+      - '[console] bluemap update world'
+      - '[console] bluemap update world_the_end'
+      - '[message] &2已開始渲染，用 /bluemap 看進度'
+
+  'spawn':
+    material: COMPASS
+    slot: 23
+    display_name: '&6&l傳送到出生點'
+    lore:
+      - '&7所有玩家都能用 &f/spawn'
+    left_click_commands:
+      # PanelKey reads the world spawn live, so moving it needs no edit here.
+      - '[player] spawn'
+      - '[message] &6已傳送到出生點'
+      - '[close]'
+
+  'stop':
+    material: BARRIER
+    slot: 25
+    display_name: '&c&l關閉伺服器'
+    lore:
+      - '&7會先存檔再關閉'
+      - '&c&l需要二次確認'
+    left_click_commands:
+      - '[openguimenu] admin_stop_confirm'

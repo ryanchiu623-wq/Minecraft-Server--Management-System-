@@ -1,0 +1,356 @@
+# 行動工具箱
+# 收錄「必須用指令才能拿到」的操作員物品，以及創造模式做不到的強化裝備。
+# 自然方塊（尖嘯體、可疑沙、紫水晶母岩那類）不放這裡。
+# 開啟方式：/toolbox 或 /tb　權限：serverpanel.toolbox
+
+open_command:
+  - toolbox
+  - tb
+
+size: 45
+menu_title: '&8&l行動工具箱　&7給：&f%panelkey_target_label%'
+
+open_requirement:
+  requirements:
+    perm:
+      type: has permission
+      permission: serverpanel.toolbox
+
+items:
+
+  # ---------- 第一排：指令方塊系列 ----------
+  'command_block':
+    material: COMMAND_BLOCK
+    slot: 0
+    display_name: '&b&l指令方塊'
+    lore:
+      - '&7觸發一次執行一次'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:command_block'
+      - '[message] &b已給予指令方塊'
+
+  'chain_command_block':
+    material: CHAIN_COMMAND_BLOCK
+    slot: 1
+    display_name: '&b&l連鎖型指令方塊'
+    lore:
+      - '&7接在前一個之後依序執行'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:chain_command_block'
+      - '[message] &b已給予連鎖型指令方塊'
+
+  'repeating_command_block':
+    material: REPEATING_COMMAND_BLOCK
+    slot: 2
+    display_name: '&b&l循環型指令方塊'
+    lore:
+      - '&7每 tick 執行一次'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:repeating_command_block'
+      - '[message] &b已給予循環型指令方塊'
+
+  'command_minecart':
+    material: COMMAND_BLOCK_MINECART
+    slot: 3
+    display_name: '&b&l指令方塊礦車'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:command_block_minecart'
+      - '[message] &b已給予指令方塊礦車'
+
+  'structure_block':
+    material: STRUCTURE_BLOCK
+    slot: 5
+    display_name: '&e&l結構方塊'
+    lore:
+      - '&7儲存與貼上建築'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:structure_block'
+      - '[message] &e已給予結構方塊'
+
+  'jigsaw':
+    material: JIGSAW
+    slot: 6
+    display_name: '&e&l拼圖方塊'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:jigsaw'
+      - '[message] &e已給予拼圖方塊'
+
+  'structure_void':
+    material: STRUCTURE_VOID
+    slot: 7
+    display_name: '&e&l結構空位'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:structure_void 16'
+      - '[message] &e已給予結構空位 x16'
+
+  'light':
+    material: LIGHT
+    slot: 8
+    display_name: '&f&l光源方塊'
+    lore:
+      - '&7隱形光源，亮度 0-15'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:light 16'
+      - '[message] &f已給予光源方塊 x16'
+
+  # ---------- 第二排：其他操作員物品 ----------
+  'debug_stick':
+    material: DEBUG_STICK
+    slot: 9
+    display_name: '&d&l除錯棒'
+    lore:
+      - '&7左鍵切屬性，右鍵改數值'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:debug_stick'
+      - '[message] &d已給予除錯棒'
+
+  'barrier':
+    material: BARRIER
+    slot: 10
+    display_name: '&c&l屏障'
+    lore:
+      - '&7隱形但無法穿越'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:barrier 64'
+      - '[message] &c已給予屏障 x64'
+
+  'bedrock':
+    material: BEDROCK
+    slot: 11
+    display_name: '&8&l基岩'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:bedrock 64'
+      - '[message] &7已給予基岩 x64'
+
+  'spawner':
+    material: SPAWNER
+    slot: 12
+    display_name: '&2&l生怪磚'
+    lore:
+      - '&7預設是豬，用除錯棒改'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:spawner'
+      - '[message] &2已給予生怪磚'
+
+  'end_portal_frame':
+    material: END_PORTAL_FRAME
+    slot: 13
+    display_name: '&5&l終界傳送門框架'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:end_portal_frame 12'
+      - '[message] &5已給予終界傳送門框架 x12'
+
+  'knowledge_book':
+    material: KNOWLEDGE_BOOK
+    slot: 14
+    display_name: '&6&l知識之書'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:knowledge_book'
+      - '[message] &6已給予知識之書'
+
+  'player_head':
+    material: PLAYER_HEAD
+    slot: 15
+    display_name: '&f&l你的頭顱'
+    lore:
+      - '&7帶你自己的皮膚'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:player_head[profile="%player_name%"]'
+      - '[message] &f已給予頭顱'
+
+  'stations':
+    material: CRAFTING_TABLE
+    slot: 16
+    display_name: '&6&l行動工作站'
+    lore:
+      - '&7工作台、終界箱、鐵砧、附魔台等'
+      - '&7不用放方塊就能開'
+    left_click_commands:
+      - '[openguimenu] stations'
+
+  # ---------- 第三排：超過上限的附魔（創造做不到） ----------
+  'super_pickaxe':
+    material: NETHERITE_PICKAXE
+    slot: 18
+    display_name: '&d&l效率 255 不壞鎬'
+    lore:
+      - '&7瞬間破壞任何方塊'
+      - '&c挖基岩也可以，小心'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:netherite_pickaxe[enchantments={"minecraft:efficiency":255},unbreakable={}]'
+      - '[message] &d已給予超級鎬'
+
+  'super_sword':
+    material: NETHERITE_SWORD
+    slot: 19
+    display_name: '&c&l銳利 255 不壞劍'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:netherite_sword[enchantments={"minecraft:sharpness":255},unbreakable={}]'
+      - '[message] &c已給予超級劍'
+
+  'super_armor':
+    material: NETHERITE_CHESTPLATE
+    slot: 20
+    display_name: '&b&l保護 255 全套盔甲'
+    lore:
+      - '&7四件式，全部不可破壞'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:netherite_helmet[enchantments={"minecraft:protection":255},unbreakable={}]'
+      - '[console] give %panelkey_target% minecraft:netherite_chestplate[enchantments={"minecraft:protection":255},unbreakable={}]'
+      - '[console] give %panelkey_target% minecraft:netherite_leggings[enchantments={"minecraft:protection":255},unbreakable={}]'
+      - '[console] give %panelkey_target% minecraft:netherite_boots[enchantments={"minecraft:protection":255},unbreakable={}]'
+      - '[message] &b已給予全套盔甲'
+
+  'unbreak_elytra':
+    material: ELYTRA
+    slot: 21
+    display_name: '&f&l不壞鞘翅'
+    lore:
+      - '&7創造的鞘翅仍會耗損'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:elytra[unbreakable={}]'
+      - '[message] &f已給予不壞鞘翅'
+
+  'knockback_stick':
+    material: STICK
+    slot: 22
+    display_name: '&e&l擊退棒'
+    lore:
+      - '&7擊退 255，一打就飛出視線'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:stick[enchantments={"minecraft:knockback":255}]'
+      - '[message] &e已給予擊退棒'
+
+  'speed_boots':
+    material: LEATHER_BOOTS
+    slot: 23
+    display_name: '&a&l極速靴'
+    lore:
+      - '&7穿上就大幅加速'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:leather_boots[attribute_modifiers=[{type:"minecraft:movement_speed",amount:0.3,operation:"add_value",slot:"feet",id:"minecraft:speed_boots"}],unbreakable={}]'
+      - '[message] &a已給予極速靴'
+
+  'jade_sword':
+    material: NETHERITE_SWORD
+    slot: 24
+    display_name: '&b&l玉髓劍'
+    lore:
+      - '&3鋒利 · 橫掃 · 掠奪 · 火焰　全 255'
+      - '&3攻速無冷卻，永不損壞'
+      - '&8無擊退：怪物原地倒下，掉落物不噴飛'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:netherite_sword[custom_name={text:"玉髓劍",color:"aqua",bold:true,italic:false},lore=[{text:"以玉髓之心鍛成",color:"dark_aqua",italic:false},{text:"一擊，萬物俱寂",color:"gray",italic:false}],enchantments={"minecraft:sharpness":255,"minecraft:sweeping_edge":255,"minecraft:looting":255,"minecraft:fire_aspect":255},attribute_modifiers=[{type:"minecraft:attack_speed",amount:4,operation:"add_value",slot:"mainhand",id:"minecraft:jade_speed"}],unbreakable={},rarity="epic"]'
+      - '[message] &b已給予玉髓劍'
+
+  # ---------- 第四排：無限持續藥水 ----------
+  'inf_night_vision':
+    material: POTION
+    slot: 27
+    display_name: '&e&l無限夜視藥水'
+    lore:
+      - '&7持續時間 -1 = 永久'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:potion[potion_contents={custom_effects:[{id:"minecraft:night_vision",duration:-1,amplifier:0}]}]'
+      - '[message] &e已給予無限夜視藥水'
+
+  'inf_fire_resist':
+    material: POTION
+    slot: 28
+    display_name: '&6&l無限抗火藥水'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:potion[potion_contents={custom_effects:[{id:"minecraft:fire_resistance",duration:-1,amplifier:0}]}]'
+      - '[message] &6已給予無限抗火藥水'
+
+  'inf_water_breathing':
+    material: POTION
+    slot: 29
+    display_name: '&b&l無限水下呼吸藥水'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:potion[potion_contents={custom_effects:[{id:"minecraft:water_breathing",duration:-1,amplifier:0}]}]'
+      - '[message] &b已給予無限水下呼吸藥水'
+
+  'inf_strength':
+    material: POTION
+    slot: 30
+    display_name: '&c&l無限力量藥水 III'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:potion[potion_contents={custom_effects:[{id:"minecraft:strength",duration:-1,amplifier:2}]}]'
+      - '[message] &c已給予無限力量藥水'
+
+  'swiftness':
+    material: POTION
+    slot: 31
+    display_name: '&b&l迅捷藥水 II'
+    left_click_commands:
+      - '[console] give %panelkey_target% minecraft:potion[potion_contents={potion:"minecraft:strong_swiftness"}]'
+      - '[message] &b已給予迅捷藥水'
+
+  # ---------- 第五排：模式與效果 ----------
+  'choose_target':
+    material: PLAYER_HEAD
+    slot: 39
+    display_name: '&b&l選擇要給誰'
+    lore:
+      - '&7目前：&f%panelkey_target_label%'
+      - '&7點擊列出線上玩家'
+    left_click_commands:
+      - '[player] givetarget'
+
+  'gm_creative':
+    material: GRASS_BLOCK
+    slot: 36
+    display_name: '&a&l創造模式'
+    left_click_commands:
+      - '[console] gamemode creative %player_name%'
+      - '[message] &a已切換為創造模式'
+
+  'gm_survival':
+    material: IRON_SWORD
+    slot: 37
+    display_name: '&c&l生存模式'
+    left_click_commands:
+      - '[console] gamemode survival %player_name%'
+      - '[message] &c已切換為生存模式'
+
+  'gm_spectator':
+    material: ENDER_EYE
+    slot: 38
+    display_name: '&7&l旁觀模式'
+    left_click_commands:
+      - '[console] gamemode spectator %player_name%'
+      - '[message] &7已切換為旁觀模式'
+
+  'night_vision':
+    material: GOLDEN_CARROT
+    slot: 40
+    display_name: '&e&l夜視效果'
+    lore:
+      - '&7持續 1 小時'
+    left_click_commands:
+      - '[console] effect give %panelkey_target% minecraft:night_vision 3600 0 true'
+      - '[message] &e已給予夜視'
+
+  'heal':
+    material: GOLDEN_APPLE
+    slot: 41
+    display_name: '&c&l補滿血量與飽食'
+    left_click_commands:
+      - '[console] effect give %panelkey_target% minecraft:instant_health 1 4 true'
+      - '[console] effect give %panelkey_target% minecraft:saturation 3 4 true'
+      - '[message] &c已補滿'
+
+  'clear_effects':
+    material: MILK_BUCKET
+    slot: 42
+    display_name: '&f&l清除所有效果'
+    left_click_commands:
+      - '[console] effect clear %player_name%'
+      - '[message] &f已清除所有狀態效果'
+
+  'back':
+    material: ARROW
+    slot: 44
+    display_name: '&7&l返回管理面板'
+    left_click_commands:
+      - '[openguimenu] admin_panel'

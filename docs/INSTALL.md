@@ -199,6 +199,8 @@ DNS 那一層要顯示你的網域指到 playit 的 IP。
 
 讓手機、平板、主機版（基岩版）的朋友連進 Java 版伺服器。**他們不需要有 Java 版帳號。**
 
+> 用安裝程式的話這一節可以跳過——它會自動下載 Geyser 和 Floodgate，並在 Geyser 設定檔存在時把 `auth-type` 改成 `floodgate`。
+
 ### 4.1 安裝外掛
 
 兩個 jar 都放進 `C:\mc-paper\plugins\`：

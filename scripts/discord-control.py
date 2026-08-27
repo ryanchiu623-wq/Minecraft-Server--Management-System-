@@ -286,7 +286,19 @@ def addresses_block():
 # --------------------------------------------------------------- monitoring
 # Only state *changes* are announced. Polling every minute and posting the
 # current state would turn the channel into noise nobody reads.
-STATE = {"server": None, "tunnel": None, "sync_size": None}
+# A single failed tunnel probe is not evidence of an outage. The Java-side
+# check asks mcstatus.io, whose answer is cached for about a minute, so one
+# unlucky probe on their side turns into a "tunnel down" alert here. Measured
+# on a healthy server: five such alerts in 42 minutes, every one recovering
+# within one or two polls, while the playit agent logged no errors at all and
+# kept forwarding traffic the whole time.
+#
+# Retrying straight away would just re-read the same cached answer, so
+# confirmation has to wait for the next tick. Recovery is not debounced -
+# there is no cost to reporting good news immediately.
+TUNNEL_FAIL_THRESHOLD = 2
+
+STATE = {"server": None, "tunnel": None, "sync_size": None, "tunnel_fails": 0}
 LOG_CHANNEL = None
 
 
@@ -344,20 +356,33 @@ async def monitor_tick():
                 log("playit restarted automatically")
                 ok, detail = await asyncio.to_thread(tunnel_report)
 
-        first_look = STATE["tunnel"] is None
-        changed = not first_look and ok != STATE["tunnel"]
-        # Report a broken tunnel even on the first observation. Treating the
-        # first look as a silent baseline meant a tunnel that was already down
-        # when the server started never got reported at all.
-        if changed or (first_look and not ok):
-            if ok:
-                await channel.send("🟢 隧道已恢復，外部連得進來")
-            else:
-                await channel.send(detail)
-            log(f"event: tunnel ok={ok}")
-        STATE["tunnel"] = ok
+        if ok:
+            STATE["tunnel_fails"] = 0
+        else:
+            STATE["tunnel_fails"] += 1
+
+        if not ok and STATE["tunnel_fails"] < TUNNEL_FAIL_THRESHOLD:
+            # Not reported yet, but recorded: a burst of these in the log is
+            # how a genuinely flaky tunnel is told apart from a flaky checker.
+            log(f"tunnel probe failed "
+                f"({STATE['tunnel_fails']}/{TUNNEL_FAIL_THRESHOLD}), "
+                f"awaiting confirmation: {detail}")
+        else:
+            first_look = STATE["tunnel"] is None
+            changed = not first_look and ok != STATE["tunnel"]
+            # Report a broken tunnel even on the first observation. Treating
+            # the first look as a silent baseline meant a tunnel that was
+            # already down when the server started never got reported at all.
+            if changed or (first_look and not ok):
+                if ok:
+                    await channel.send("🟢 隧道已恢復，外部連得進來")
+                else:
+                    await channel.send(detail)
+                log(f"event: tunnel ok={ok} detail={detail}")
+            STATE["tunnel"] = ok
     else:
         STATE["tunnel"] = None
+        STATE["tunnel_fails"] = 0
 
     # backup-world.ps1 leaves this marker if it could not turn auto-saving
     # back on. That must never sit unnoticed - the world would stop saving.

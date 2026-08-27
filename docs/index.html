@@ -14,195 +14,259 @@
     --panel: #ffffff;
     --sunk: #e7eae4;
     --rule: #d2d7cc;
-    --rule-soft: #e0e4da;
+    --rule-soft: #e2e6dc;
     --ink: #191d19;
     --ink-2: #4a5248;
     --ink-3: #79826f;
     --accent: #1c6f6a;
+    --accent-soft: #dceae8;
     --ok: #3d7a38;
     --warn: #96670f;
     --crit: #a8412f;
-    --ok-bg: #e2ecdd;
-    --shadow: 0 1px 2px rgba(20,28,20,.05), 0 10px 30px rgba(20,28,20,.06);
+    --crit-soft: #f2ddd8;
+    --shadow: 0 1px 2px rgba(20,28,20,.05), 0 14px 40px rgba(20,28,20,.07);
+
+    /* The console band is a screen, so it stays dark in both themes. */
+    --scr-bg: #121614;
+    --scr-panel: #1a201d;
+    --scr-rule: #2b332e;
+    --scr-ink: #e6ebe4;
+    --scr-ink-2: #97a396;
+    --scr-ok: #7fc175;
+    --scr-warn: #d9ad55;
+    --scr-accent: #5cc3ba;
+
     --f-sans: "IBM Plex Sans", "Noto Sans TC", system-ui, sans-serif;
     --f-cjk: "Noto Sans TC", "IBM Plex Sans", system-ui, sans-serif;
     --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --ground: #111413;
-      --panel: #1a1e1c;
-      --sunk: #151917;
-      --rule: #2e352f;
-      --rule-soft: #242a25;
+      --ground: #101312;
+      --panel: #181c1a;
+      --sunk: #141816;
+      --rule: #2b322c;
+      --rule-soft: #222823;
       --ink: #e9ede7;
       --ink-2: #adb5ab;
       --ink-3: #7c857a;
       --accent: #5cc3ba;
+      --accent-soft: #172a28;
       --ok: #85c07b;
       --warn: #dcb056;
       --crit: #e28a77;
-      --ok-bg: #1e2c1c;
-      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 34px rgba(0,0,0,.32);
+      --crit-soft: #2c1d1a;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 16px 44px rgba(0,0,0,.34);
+      --scr-bg: #0c100e;
+      --scr-panel: #151a17;
     }
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
   body {
     margin: 0; background: var(--ground); color: var(--ink);
     font-family: var(--f-cjk); font-size: 16.5px; line-height: 1.75;
     -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
-  .prose { max-width: 68ch; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 26px; }
+  .prose { max-width: 66ch; }
+  p { margin: 0 0 18px; } p:last-child { margin-bottom: 0; }
+  a { color: var(--accent); }
 
-  /* ---------- masthead ---------- */
-  header { padding: 88px 0 72px; border-bottom: 1px solid var(--rule); }
+  /* ================= masthead ================= */
+  header { position: relative; overflow: hidden; border-bottom: 1px solid var(--rule); }
+  header::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(to right, var(--rule-soft) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--rule-soft) 1px, transparent 1px);
+    background-size: 58px 58px;
+    -webkit-mask-image: radial-gradient(ellipse 74% 78% at 18% 6%, #000 8%, transparent 68%);
+    mask-image: radial-gradient(ellipse 74% 78% at 18% 6%, #000 8%, transparent 68%);
+  }
+  header .wrap { position: relative; padding-top: 96px; padding-bottom: 78px; }
   .eyebrow {
-    font-family: var(--f-mono); font-size: 12px; font-weight: 500;
-    letter-spacing: .18em; text-transform: uppercase; color: var(--accent);
-    margin: 0 0 18px;
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--f-mono); font-size: 11.5px; font-weight: 500;
+    letter-spacing: .2em; text-transform: uppercase; color: var(--accent);
+    margin: 0 0 26px; padding: 5px 12px 5px 10px; border-radius: 999px;
+    background: var(--accent-soft);
   }
+  .eyebrow i {
+    width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+    animation: beat 2.6s ease-in-out infinite;
+  }
+  @keyframes beat { 0%,100% { opacity: 1 } 50% { opacity: .3 } }
   h1 {
-    font-family: var(--f-sans); font-weight: 700;
-    font-size: clamp(32px, 5.2vw, 52px); line-height: 1.1;
-    letter-spacing: -.022em; margin: 0 0 22px; text-wrap: balance;
+    font-family: var(--f-cjk); font-weight: 900;
+    font-size: clamp(34px, 5.6vw, 58px); line-height: 1.14;
+    letter-spacing: -.03em; margin: 0 0 24px; text-wrap: balance;
   }
-  .lede { font-size: 19px; color: var(--ink-2); margin: 0 0 32px; max-width: 60ch; }
+  h1 span { color: var(--accent); }
+  .lede { font-size: 19px; color: var(--ink-2); margin: 0 0 36px; max-width: 56ch; }
   .lede strong { color: var(--ink); font-weight: 500; }
 
   .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
   .btn {
-    display: inline-flex; align-items: center; gap: 9px;
-    font-family: var(--f-sans); font-weight: 600; font-size: 15px;
-    text-decoration: none; padding: 12px 22px; border-radius: 4px;
-    border: 1px solid var(--rule); color: var(--ink); background: var(--panel);
-    transition: border-color .15s, color .15s;
+    display: inline-flex; align-items: center; font-family: var(--f-sans);
+    font-weight: 600; font-size: 15px; text-decoration: none;
+    padding: 13px 24px; border-radius: 4px; border: 1px solid var(--rule);
+    color: var(--ink); background: var(--panel);
+    transition: border-color .15s, color .15s, transform .15s;
   }
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn.primary {
-    background: var(--accent); border-color: var(--accent);
-    color: var(--ground);
-  }
-  .btn.primary:hover { filter: brightness(1.08); color: var(--ground); }
+  .btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--ground); }
+  .btn.primary:hover { color: var(--ground); filter: brightness(1.09); }
   .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .meta { font-family: var(--f-mono); font-size: 13px; color: var(--ink-3); }
 
-  /* ---------- sections ---------- */
-  section { padding: 72px 0; border-bottom: 1px solid var(--rule); }
+  /* ================= sections ================= */
+  section { padding: 84px 0; border-bottom: 1px solid var(--rule); }
   section:last-of-type { border-bottom: 0; }
   h2 {
-    font-family: var(--f-sans); font-weight: 700; font-size: 13px;
-    letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3);
-    margin: 0 0 28px;
+    font-family: var(--f-mono); font-weight: 600; font-size: 12px;
+    letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3);
+    margin: 0 0 8px;
   }
-  h3 {
-    font-family: var(--f-cjk); font-weight: 700; font-size: 20px;
-    margin: 0 0 10px; letter-spacing: -.01em;
-  }
-  p { margin: 0 0 18px; }
-  p:last-child { margin-bottom: 0; }
-  a { color: var(--accent); }
+  .h2sub { font-size: 25px; font-weight: 700; letter-spacing: -.015em; margin: 0 0 34px; }
+  h3 { font-weight: 700; font-size: 19px; margin: 0 0 9px; letter-spacing: -.01em; }
 
-  /* ---------- console mock ---------- */
+  /* ================= console band ================= */
+  .band {
+    background: var(--scr-bg); color: var(--scr-ink);
+    padding: 84px 0; border-bottom: 1px solid var(--rule);
+  }
+  .band h2 { color: var(--scr-ink-2); }
+  .band .h2sub { color: var(--scr-ink); }
+  .band .caption { color: var(--scr-ink-2); font-size: 14px; margin: 18px 0 0; }
   .console {
-    background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
-    box-shadow: var(--shadow); overflow: hidden; margin: 8px 0 0;
+    background: var(--scr-panel); border: 1px solid var(--scr-rule);
+    border-radius: 8px; overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,.3), 0 24px 60px rgba(0,0,0,.4);
   }
   .console-bar {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--rule);
-    font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-3);
+    gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--scr-rule);
+    font-family: var(--f-mono); font-size: 12.5px; color: var(--scr-ink-2);
   }
   .pill {
-    display: inline-flex; align-items: center; gap: 7px; font-weight: 600;
-    font-size: 13px; padding: 4px 12px; border-radius: 999px;
-    color: var(--ok); background: var(--ok-bg);
-    border: 1px solid color-mix(in srgb, var(--ok) 38%, transparent);
-    font-family: var(--f-cjk);
+    display: inline-flex; align-items: center; gap: 8px; font-weight: 700;
+    font-size: 13px; padding: 5px 14px; border-radius: 999px;
+    color: var(--scr-ok); background: rgba(127,193,117,.13);
+    border: 1px solid rgba(127,193,117,.3);
   }
-  .pill i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .pill i {
+    width: 8px; height: 8px; border-radius: 50%; background: currentColor;
+    animation: beat 2.6s ease-in-out infinite;
+  }
   .tiles {
-    display: grid; gap: 1px; background: var(--rule-soft);
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    display: grid; gap: 1px; background: var(--scr-rule);
+    grid-template-columns: repeat(auto-fit, minmax(152px, 1fr));
   }
-  .tile { background: var(--panel); padding: 16px 18px 18px; }
+  .tile { background: var(--scr-panel); padding: 17px 19px 19px; }
   .tile .k {
-    font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em;
-    text-transform: uppercase; color: var(--ink-3); display: block;
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: .15em;
+    text-transform: uppercase; color: var(--scr-ink-2); display: block;
   }
   .tile .v {
-    font-family: var(--f-mono); font-size: 24px; font-weight: 600;
-    font-variant-numeric: tabular-nums; display: block; margin: 3px 0 1px;
+    font-family: var(--f-mono); font-size: 25px; font-weight: 600;
+    font-variant-numeric: tabular-nums; display: block; margin: 4px 0 2px;
+    color: var(--scr-ink);
   }
-  .tile .n { font-size: 12px; color: var(--ink-3); }
-  .tile.ok { box-shadow: inset 3px 0 0 var(--ok); }
-  .tile.warn { box-shadow: inset 3px 0 0 var(--warn); }
-  .meter { height: 4px; border-radius: 2px; background: var(--sunk); margin-top: 8px; overflow: hidden; }
-  .meter i { display: block; height: 100%; width: 53%; background: var(--accent); }
+  .tile .n { font-size: 12px; color: var(--scr-ink-2); }
+  .tile.ok { box-shadow: inset 3px 0 0 var(--scr-ok); }
+  .tile.warn { box-shadow: inset 3px 0 0 var(--scr-warn); }
+  .meter { height: 4px; border-radius: 2px; background: rgba(255,255,255,.07); margin-top: 9px; overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 53%; background: var(--scr-accent); }
   .console-log {
-    font-family: var(--f-mono); font-size: 12px; line-height: 1.7;
-    padding: 14px 18px; color: var(--ink-3); background: var(--sunk);
-    border-top: 1px solid var(--rule-soft); overflow-x: auto;
-    white-space: pre;
+    font-family: var(--f-mono); font-size: 12px; line-height: 1.75;
+    padding: 15px 20px; color: var(--scr-ink-2); background: rgba(0,0,0,.22);
+    border-top: 1px solid var(--scr-rule); overflow-x: auto; white-space: pre;
   }
-  .caption { font-size: 13.5px; color: var(--ink-3); margin: 14px 0 0; }
+  .console-log b { color: var(--scr-accent); font-weight: 500; }
 
-  /* ---------- feature list ---------- */
-  .grid { display: grid; gap: 34px 40px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-  .grid p { font-size: 15.5px; color: var(--ink-2); }
+  /* ================= layered check ================= */
+  .layers { display: flex; flex-direction: column; gap: 8px; max-width: 720px; }
+  .layer {
+    display: grid; grid-template-columns: 26px 1fr auto; align-items: center;
+    gap: 16px; padding: 15px 18px; border-radius: 5px;
+    background: var(--panel); border: 1px solid var(--rule);
+  }
+  .layer .idx { font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
+  .layer .name { font-weight: 700; font-size: 16px; }
+  .layer .name em { display: block; font-style: normal; font-weight: 400; font-size: 13.5px; color: var(--ink-3); }
+  .badge {
+    font-family: var(--f-mono); font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 3px; letter-spacing: .06em;
+    white-space: nowrap;
+  }
+  .badge.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+  .badge.bad { color: var(--crit); background: var(--crit-soft); }
+  .layer.bad { border-color: color-mix(in srgb, var(--crit) 45%, var(--rule)); }
+  .layer.cause { position: relative; }
+  .layer.cause::after {
+    content: "問題從這裡開始"; position: absolute; right: 18px; bottom: -9px;
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em;
+    color: var(--crit); background: var(--ground); padding: 0 6px;
+  }
+  .layers-note {
+    margin: 26px 0 0; font-size: 15px; color: var(--ink-2); max-width: 62ch;
+  }
+
+  /* ================= feature grid ================= */
+  .grid { display: grid; gap: 0; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .cell { padding: 30px 34px 30px 0; border-top: 1px solid var(--rule-soft); }
+  .cell p { font-size: 15.5px; color: var(--ink-2); }
   .num {
     font-family: var(--f-mono); font-size: 11px; color: var(--accent);
-    letter-spacing: .1em; display: block; margin-bottom: 6px;
+    letter-spacing: .12em; display: block; margin-bottom: 10px;
   }
 
-  /* ---------- tables ---------- */
+  /* ================= tables & limits ================= */
   .scroll { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 460px; }
-  th {
-    text-align: left; font-family: var(--f-mono); font-size: 10.5px;
-    letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3);
-    padding: 0 16px 9px 0; border-bottom: 1px solid var(--rule); white-space: nowrap;
-  }
-  td { padding: 13px 16px 13px 0; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  table { width: 100%; border-collapse: collapse; font-size: 15.5px; min-width: 460px; max-width: 720px; }
+  td { padding: 14px 18px 14px 0; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  td:first-child { width: 170px; color: var(--ink-3); }
   tr:last-child td { border-bottom: 0; }
-  td code, p code, li code {
+  code {
     font-family: var(--f-mono); font-size: .88em; background: var(--sunk);
-    border: 1px solid var(--rule-soft); border-radius: 3px; padding: 1px 5px;
+    border: 1px solid var(--rule-soft); border-radius: 3px; padding: 1px 6px;
   }
-
-  /* ---------- honest limits ---------- */
-  .limits { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; }
-  .limits li { padding-left: 22px; position: relative; color: var(--ink-2); font-size: 15.5px; }
-  .limits li::before {
-    content: ""; position: absolute; left: 0; top: .72em;
-    width: 9px; height: 1.5px; background: var(--ink-3);
+  .limits { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .limits li {
+    padding: 18px 20px; background: var(--sunk); border-radius: 4px;
+    color: var(--ink-2); font-size: 15px;
   }
-  .limits b { color: var(--ink); font-weight: 600; }
+  .limits b { color: var(--ink); font-weight: 700; display: block; margin-bottom: 3px; }
 
-  /* ---------- docs ---------- */
-  .docs { display: flex; flex-direction: column; gap: 2px; }
+  /* ================= docs ================= */
+  .docs { display: flex; flex-direction: column; max-width: 760px; }
   .doc {
-    display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px;
-    padding: 18px 0; border-bottom: 1px solid var(--rule-soft);
-    text-decoration: none; color: inherit;
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px;
+    padding: 20px 0; border-bottom: 1px solid var(--rule-soft);
+    text-decoration: none; color: inherit; transition: padding-left .15s;
   }
   .doc:last-child { border-bottom: 0; }
+  .doc:hover { padding-left: 8px; }
   .doc:hover .doc-t { color: var(--accent); }
-  .doc-t { font-weight: 700; font-size: 17px; }
+  .doc-t { font-weight: 700; font-size: 17.5px; }
   .doc-d { color: var(--ink-3); font-size: 14.5px; }
 
-  footer {
-    padding: 44px 0 64px; font-size: 13.5px; color: var(--ink-3);
-    border-top: 1px solid var(--rule);
-  }
+  footer { padding: 46px 0 68px; font-size: 13.5px; color: var(--ink-3); border-top: 1px solid var(--rule); }
   footer a { color: var(--ink-3); }
 
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .eyebrow i, .pill i { animation: none; }
+    .btn:hover, .doc:hover { transform: none; padding-left: 0; }
+  }
   @media (max-width: 640px) {
-    header { padding: 56px 0 48px; }
-    section { padding: 52px 0; }
-    body { font-size: 16px; }
+    header .wrap { padding-top: 62px; padding-bottom: 52px; }
+    section, .band { padding: 56px 0; }
+    .cell { padding-right: 0; }
+    .layer { grid-template-columns: 22px 1fr; }
+    .layer .badge { grid-column: 2; justify-self: start; }
   }
 </style>
 </head>
@@ -210,8 +274,8 @@
 
 <header>
   <div class="wrap">
-    <p class="eyebrow">Minecraft Server Management System</p>
-    <h1>在自己的電腦上開伺服器，<br>然後讓它自己撐著。</h1>
+    <p class="eyebrow"><i></i>Minecraft Server Management System</p>
+    <h1>在自己的電腦上開伺服器，<br>然後<span>讓它自己撐著</span>。</h1>
     <p class="lede">
       一套裝在家用 Windows 機器上的管理工具。<strong>開伺服器不難，難的是它要一直開著</strong>——
       當掉要有人拉起來、世界要有人備份、朋友連不進來要查得出是哪一層壞了。這些是它處理的事。
@@ -224,9 +288,10 @@
   </div>
 </header>
 
-<section>
+<div class="band">
   <div class="wrap">
-    <h2>控制台</h2>
+    <h2>Console</h2>
+    <p class="h2sub">在沙發上就能看它現在怎麼樣</p>
     <div class="console">
       <div class="console-bar">
         <span>mc.example.org</span>
@@ -240,48 +305,67 @@
         <div class="tile ok"><span class="k">隧道</span><span class="v">正常</span><span class="n">外部連得進來</span></div>
         <div class="tile warn"><span class="k">最近備份</span><span class="v">8.7 小時</span><span class="n">保留 7 份</span></div>
       </div>
-      <div class="console-log">[22:14:03] [Server thread/INFO]: Starting minecraft server version 1.21
-[22:14:07] [Server thread/INFO]: [Geyser-Spigot] Started Geyser on 0.0.0.0:19132
-[22:14:09] [Server thread/INFO]: Done (6.412s)! For help, type "help"
-[22:31:55] [Server thread/INFO]: [Rcon] 伺服器將在 5 分鐘後重啟（定期重啟以釋放記憶體）</div>
+      <div class="console-log">[22:14:09] [Server thread/INFO]: Done (6.412s)! For help, type "help"
+[22:31:55] [Server thread/INFO]: <b>[Rcon] 伺服器將在 5 分鐘後重啟（定期重啟以釋放記憶體）</b>
+[22:36:55] [Server thread/INFO]: Stopping the server
+[22:37:38] [Server thread/INFO]: Done (5.907s)! For help, type "help"</div>
     </div>
     <p class="caption">瀏覽器開的管理頁，只接受內網連線。手機、平板、另一台電腦都能開。</p>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2>Diagnostics</h2>
+    <p class="h2sub">壞了的時候，先知道是哪一層壞</p>
+    <div class="layers">
+      <div class="layer"><span class="idx">01</span><span class="name">本機服務<em>伺服器程序本身活著嗎</em></span><span class="badge ok">正常</span></div>
+      <div class="layer"><span class="idx">02</span><span class="name">DNS<em>網域指到正確的地方嗎</em></span><span class="badge ok">正常</span></div>
+      <div class="layer bad cause"><span class="idx">03</span><span class="name">隧道<em>從這台打得到公開位址嗎</em></span><span class="badge bad">失敗</span></div>
+      <div class="layer bad"><span class="idx">04</span><span class="name">外部視角<em>別人連得進來嗎</em></span><span class="badge bad">失敗</span></div>
+      <div class="layer"><span class="idx">05</span><span class="name">網頁地圖<em>地圖站台回應嗎</em></span><span class="badge ok">正常</span></div>
+    </div>
+    <p class="layers-note">
+      六層由上往下排，因為<strong>下層的問題通常是上層造成的</strong>。上面這種狀況只有一個問題——隧道斷了——
+      「外部視角」跟著紅只是結果。從最上面的失敗項開始查，就不會把時間花在追第二個症狀上。
+    </p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <h2>它做什麼</h2>
+    <h2>What it does</h2>
+    <p class="h2sub">它做什麼</p>
     <div class="grid">
-      <div>
+      <div class="cell">
         <span class="num">01</span>
         <h3>讓外面連得進來</h3>
         <p>家用網路沒有固定 IP、開不了通訊埠。用 playit 隧道繞過，不必動路由器；有公網 IP 的話也可以直接轉埠。基岩版的朋友——手機、平板、主機——透過 Geyser 和 Floodgate 連進同一個伺服器，不需要 Java 帳號。</p>
       </div>
-      <div>
+      <div class="cell">
         <span class="num">02</span>
         <h3>當掉了自己爬起來</h3>
         <p>看門狗每五分鐘檢查一次，伺服器意外死掉就重新啟動，並且分得出「你按了關閉」和「它自己掛了」。連續失敗會停手並留下紀錄，而不是無限重啟一個壞掉的東西。</p>
       </div>
-      <div>
+      <div class="cell">
         <span class="num">03</span>
         <h3>備份不會壞掉存檔</h3>
         <p>先暫停自動存檔、把世界落盤、複製、壓縮，然後確認自動存檔真的恢復了——沒恢復就留下警告檔並通知。備份腳本讓存檔停在關閉狀態，是最容易發生又最難察覺的災難。</p>
       </div>
-      <div>
+      <div class="cell">
         <span class="num">04</span>
         <h3>重啟前會先講</h3>
         <p>排程重啟在 5、3、1 分鐘各廣播一次，最後 30 秒開始倒數，存檔後才關。不會有人蓋到一半突然被踢下線。</p>
       </div>
-      <div>
+      <div class="cell">
         <span class="num">05</span>
         <h3>在外面也能管</h3>
         <p>Discord 機器人可以查狀態、開關伺服器、下主控台指令，回覆只有你看得到。人不在電腦前也不用開遠端桌面。</p>
       </div>
-      <div>
+      <div class="cell">
         <span class="num">06</span>
-        <h3>壞了查得出是哪一層</h3>
-        <p>健康檢查分六層：本機服務、DNS、隧道、外部視角、網頁地圖。由上往下排，因為下層的問題通常是上層造成的——從最上面的失敗項開始查就對了。</p>
+        <h3>一支程式裝完</h3>
+        <p>安裝程式會抓 Paper、下載外掛、開啟 RCON、寫設定、註冊排程工作、建立防火牆規則。每一項都能個別取消勾選。</p>
       </div>
     </div>
   </div>
@@ -289,22 +373,12 @@
 
 <section>
   <div class="wrap">
-    <h2>安裝</h2>
-    <div class="prose">
-      <p>下載 <code>MinecraftToolkitSetup.exe</code> 執行。它會檢查環境、下載 Paper、抓外掛、開啟 RCON、寫設定、註冊排程工作、建立防火牆規則。每一項都能個別取消勾選。</p>
-      <p>需要系統管理員權限，因為要建防火牆規則。裝完啟動伺服器，然後開 <code>http://localhost:8099</code>。</p>
-      <p>不想用安裝程式的話，兩份手動流程都是從零開始寫的，每一節都附驗證步驟。</p>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
-    <h2>需要什麼</h2>
+    <h2>Requirements</h2>
+    <p class="h2sub">需要什麼</p>
     <div class="scroll">
       <table>
         <tbody>
-          <tr><td style="width:180px">作業系統</td><td>Windows 10 或 11</td></tr>
+          <tr><td>作業系統</td><td>Windows 10 或 11</td></tr>
           <tr><td>Java</td><td>21 以上（Paper 的要求）</td></tr>
           <tr><td>記憶體</td><td>建議 8 GB 以上，伺服器本身配 4 GB 綽綽有餘</td></tr>
           <tr><td>網路</td><td>一般家用寬頻即可。用 playit 的話不需要公網 IP</td></tr>
@@ -317,23 +391,24 @@
 
 <section>
   <div class="wrap">
-    <h2>它不做什麼</h2>
-    <div class="prose">
-      <p style="color:var(--ink-2)">這是為了自己家裡那台電腦寫的，不是通用的伺服器管理平台。用之前知道這些比較好：</p>
-      <ul class="limits">
-        <li><b>只支援 Windows。</b>腳本用了工作排程器、PowerShell 和 Windows 防火牆，沒有 Linux 或 macOS 版本。</li>
-        <li><b>一次管一台伺服器。</b>沒有多實例、沒有多使用者、沒有權限分級。</li>
-        <li><b>控制台只在內網。</b>它能執行任意主控台指令，所以刻意不對外開放。要在外面管理就用 Discord 機器人。</li>
-        <li><b>介面是繁體中文。</b>程式碼註解和提交訊息是英文，但使用者看到的文字沒有英文版。</li>
-        <li><b>不幫你付電費。</b>自架的前提是那台機器要開著。</li>
-      </ul>
-    </div>
+    <h2>Limits</h2>
+    <p class="h2sub">它不做什麼</p>
+    <p class="prose" style="color:var(--ink-2);margin-bottom:26px">
+      這是為了自己家裡那台電腦寫的，不是通用的伺服器管理平台。用之前知道這些比較好：
+    </p>
+    <ul class="limits">
+      <li><b>只支援 Windows</b>腳本用了工作排程器、PowerShell 和 Windows 防火牆，沒有 Linux 或 macOS 版本。</li>
+      <li><b>一次管一台伺服器</b>沒有多實例、沒有多使用者、沒有權限分級。</li>
+      <li><b>控制台只在內網</b>它能執行任意主控台指令，所以刻意不對外開放。要在外面管理就用 Discord 機器人。</li>
+      <li><b>介面是繁體中文</b>程式碼註解和提交訊息是英文，但使用者看到的文字沒有英文版。</li>
+    </ul>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <h2>文件</h2>
+    <h2>Docs</h2>
+    <p class="h2sub">文件</p>
     <div class="docs">
       <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/blob/main/docs/INSTALL.md">
         <span class="doc-t">安裝流程（playit 隧道）</span>

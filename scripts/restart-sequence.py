@@ -210,12 +210,17 @@ def stop_server(session):
     log('stop issued: {0}'.format(detail.replace(chr(10), ' | ')))
     session.close()
 
-    for _ in range(40):
+    # Ten minutes, not two. A shutdown save scales with how much of the world
+    # has been touched: the same server that stopped in 5 seconds one day took
+    # 8m37s the next, after a few days of heavy building. Timing out here does
+    # not restart the server, so a cap that is merely usually enough leaves the
+    # server down on exactly the days it was busiest.
+    for _ in range(200):
         time.sleep(3)
         if not port_open(GAME_PORT):
             log('Server stopped')
             return True
-    return ok and False
+    return False
 
 
 def start_server():
@@ -281,7 +286,7 @@ def main():
 
         take_lock()
         if not stop_server(session):
-            log('Server did not stop within 2 minutes - '
+            log('Server did not stop within 10 minutes - '
                 'not starting a second one', 'ERROR')
             return 1
 

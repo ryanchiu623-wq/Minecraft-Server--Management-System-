@@ -13,6 +13,18 @@
 
 ---
 
+## 文件
+
+| 文件 | 內容 |
+|---|---|
+| [安裝流程（playit 隧道）](docs/INSTALL.md) | **多數人看這份。** 從零開始的完整流程，不需要公網 IP |
+| [安裝流程（路由器轉埠）](docs/INSTALL-port-forwarding.md) | 你有公網 IP、想直連降低延遲時看這份 |
+| [PanelKey 外掛說明](bundled/README.md) | 內建外掛的指令、依賴、自行建置方式 |
+
+本頁下面有 [playit 設定](#對外開放playit)、[安全性](#安全性)、[排程工作](#排程工作)、[踩過的坑](#踩過的坑)。
+
+---
+
 ## 這套東西解決什麼
 
 家用網路沒有固定 IP、不能開通訊埠，朋友連不進來；伺服器半夜當掉沒人知道；想關伺服器得跑回電腦前；基岩版的朋友（手機、平板、主機）連不進 Java 版伺服器。
@@ -52,6 +64,68 @@
 |---|---|
 | [INSTALL.md](docs/INSTALL.md) | **多數人選這份。** 用 playit 隧道，不需要公網 IP、不用動路由器。台灣家用寬頻常見的 CGNAT 也能用 |
 | [INSTALL-port-forwarding.md](docs/INSTALL-port-forwarding.md) | 你有公網 IP，想直連降低延遲。需要自己設定路由器，而且你家 IP 會曝光 |
+
+---
+
+## 對外開放（playit）
+
+**安裝程式不會做這一步**，因為它需要你自己註冊帳號。這也是朋友能不能連進來的關鍵，所以放在這裡。
+
+家用網路多半沒有固定 IP、不能開通訊埠（台灣的家用寬頻很多是電信商的 CGNAT）。playit 用一條由內往外建立的隧道繞過這個限制，免費、不用動路由器。
+
+### 1. 安裝
+
+到 <https://playit.gg> 註冊，下載 Windows 版安裝。它會裝成系統服務 `playitd`，開機自動啟動。第一次執行會給你一個網址去綁定帳號。
+
+### 2. 建立隧道
+
+在網頁後台建立兩條，**通訊協定不能選錯**：
+
+| 類型 | 通訊協定 | 指向本機 |
+|---|---|---|
+| Minecraft Java | **TCP** | `127.0.0.1:25565` |
+| Minecraft 基岩版 | **UDP** | `127.0.0.1:19132` |
+
+建好會拿到類似 `something.tun.ply.gg:12345` 的公開位址。不玩基岩版的話第二條可以不建。
+
+### 3. 填進 config.json
+
+```json
+"java":    { "host": "something.tun.ply.gg", "port": 25565 },
+"bedrock": { "host": "something.tun.ply.gg", "tunnelPort": 12345 }
+```
+
+`tunnelPort` 填 playit 給的**公開 UDP 埠**，通常不是 19132——基岩版玩家在遊戲裡要填這個。
+
+### 4. 綁自己的網域（選用）
+
+用 Cloudflare 的話：
+
+| 類型 | 名稱 | 內容 | Proxy |
+|---|---|---|---|
+| A | `mc` | playit 給的 IP | **DNS only（灰雲）** |
+| SRV | `_minecraft._tcp.mc` | 優先權 0、權重 0、埠 `<playit 的埠>`、目標 `mc.你的網域` | — |
+| A | `bedrock` | playit 給的 IP | **DNS only（灰雲）** |
+
+有 SRV 記錄的話，Java 版玩家只要打 `mc.你的網域`，不用加埠號。
+
+### 三個會卡住你的地方
+
+**Proxy 一定要關（灰雲）。** 橘雲是 HTTP 代理，Minecraft 的協定過不去。
+
+**不要建 AAAA 記錄。** playit 會公告 IPv6 位址但不會真的把 IPv6 流量送到 agent，玩家會拿到 `Connection timed out: getsockopt`。整條 DNS 鏈路只用 IPv4。
+
+**後台顯示「線上」不代表真的通。** 那只反映 agent 有沒有連上 playit 的服務，不保證流量到得了你的機器。判斷依據是 agent 日誌（`C:\ProgramData\playit_gg\logs\playitd.log`）和 `python scripts/check-server.py` 的外部視角那一層。遇到後台一切正常但就是連不進來時，**刪掉 agent 和隧道重新建立**往往是唯一有效的解法。
+
+### 驗證
+
+```bash
+python scripts/check-server.py
+```
+
+「外部視角」那一層通過就是真的通了。最後叫朋友實際連連看——外部檢測通過不等於玩家真的進得來。
+
+完整版（含疑難排解）在 [docs/INSTALL.md 第 3 節](docs/INSTALL.md#3-對外開放)。
 
 ---
 

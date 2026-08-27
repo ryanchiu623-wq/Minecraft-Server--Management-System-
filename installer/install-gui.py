@@ -45,6 +45,25 @@ def bundle_dir():
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+def enable_dpi_awareness():
+    """Tell Windows we draw at real pixels - before any window exists.
+
+    Called after the root window is created it has no effect, and asking for
+    awareness without then scaling the fonts is worse than not asking at all:
+    Windows stops magnifying the app, so on a 253% display every control comes
+    out roughly a third of its intended size.
+    """
+    if sys.platform != "win32":
+        return
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)      # per-monitor v2
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()       # older fallback
+        except Exception:
+            pass
+
+
 def is_admin():
     try:
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
@@ -131,16 +150,34 @@ def make_password(n=24):
 
 
 class Installer(tk.Tk):
-    PAD = 10
+    PAD = 10        # replaced with a scaled value in __init__
+
+    def px(self, n):
+        """A design pixel in this display's real pixels."""
+        return int(n * self.scale)
 
     def __init__(self):
         super().__init__()
         self.title(APP_TITLE)
-        self.geometry("820x760")
-        self.minsize(760, 640)
+
+        # The process is DPI aware, so the window is measured in real pixels.
+        # Tk's point scaling and every hard-coded pixel size have to follow the
+        # display scale or the whole UI comes out tiny.
+        dpi = self.winfo_fpixels("1i")
+        self.scale = dpi / 96.0
+        self.tk.call("tk", "scaling", dpi / 72.0)
+        # Clamp to the screen: at 2.25x a 780-pixel design is 1755 tall, which
+        # overflows a 1800-pixel display and hides the install button.
+        want_w, want_h = self.px(860), self.px(760)
+        max_w = int(self.winfo_screenwidth() * 0.92)
+        max_h = int(self.winfo_screenheight() * 0.88)
+        self.geometry("%dx%d" % (min(want_w, max_w), min(want_h, max_h)))
+        self.minsize(min(self.px(700), max_w), min(self.px(560), max_h))
+        self.PAD = self.px(10)
+
         try:
-            ctypes.windll.shcore.SetProcessDpiAwareness(1)
-        except Exception:
+            ttk.Style().theme_use("vista")
+        except tk.TclError:
             pass
 
         self.q = queue.Queue()
@@ -190,7 +227,7 @@ class Installer(tk.Tk):
             ttk.Button(row, text="瀏覽…", width=8,
                        command=lambda v=var: self._pick(v)).pack(side="left",
                                                                  padx=(6, 0))
-        ttk.Label(paths, foreground="#a06000", wraplength=740,
+        ttk.Label(paths, foreground="#a06000", wraplength=self.px(740),
                   text="不要選在「文件」「圖片」「桌面」底下——受控資料夾存取會"
                        "無聲擋掉寫入，伺服器會莫名死掉且查不到原因。"
                   ).pack(anchor="w", pady=(6, 0))
@@ -243,7 +280,7 @@ class Installer(tk.Tk):
         self.progress = ttk.Progressbar(bar, mode="determinate", maximum=100)
         self.progress.pack(side="left", fill="x", expand=True, padx=10)
 
-        self.log = tk.Text(root, height=14, wrap="word",
+        self.log = tk.Text(root, height=9, wrap="word",
                            font=("Consolas", 9), state="disabled")
         self.log.pack(fill="both", expand=True)
 
@@ -587,5 +624,30 @@ class Installer(tk.Tk):
             self.say("  %s %s" % ("✓" if ok else "✗", name))
 
 
+def probe():
+    """Print what this display resolves to and exit.
+
+    Support aid: DPI problems look identical from the outside ("everything is
+    tiny") whatever the cause, and these four numbers separate them.
+    """
+    enable_dpi_awareness()
+    root = tk.Tk()
+    root.withdraw()
+    dpi = root.winfo_fpixels("1i")
+    print("DPI              %.1f" % dpi)
+    print("scale            %.2fx" % (dpi / 96.0))
+    print("tk scaling       %.3f" % (dpi / 72.0))
+    print("screen           %d x %d"
+          % (root.winfo_screenwidth(), root.winfo_screenheight()))
+    print("window would be  %d x %d"
+          % (min(int(860 * dpi / 96), int(root.winfo_screenwidth() * 0.92)),
+             min(int(760 * dpi / 96), int(root.winfo_screenheight() * 0.88))))
+    root.destroy()
+
+
 if __name__ == "__main__":
-    Installer().mainloop()
+    if "--probe" in sys.argv:
+        probe()
+    else:
+        enable_dpi_awareness()
+        Installer().mainloop()

@@ -44,6 +44,21 @@ pip install discord.py
 
 ## 安裝
 
+### 用安裝程式（最省事）
+
+到 [Releases](../../releases) 下載 `MinecraftToolkitSetup.exe` 執行。它會檢查環境、下載 Paper、開啟 RCON、寫好 `config.json`、註冊排程工作、建立防火牆規則和桌面捷徑。
+
+需要系統管理員權限（防火牆規則要）。
+
+自行建置：
+
+```bash
+pip install pyinstaller
+python installer/build_exe.py
+```
+
+### 手動安裝
+
 完整的逐步流程（含 playit 對外開放、基岩版互通、網頁地圖、Discord bot、排程自動化）在 **[docs/INSTALL.md](docs/INSTALL.md)**。
 
 下面是最短路徑：

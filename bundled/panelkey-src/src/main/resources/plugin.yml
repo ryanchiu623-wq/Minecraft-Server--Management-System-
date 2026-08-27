@@ -1,0 +1,21 @@
+name: PanelKey
+version: 1.3.0
+main: tw.ryanchiu.panelkey.PanelKey
+api-version: '1.21'
+author: ryanchiu623
+description: Admin panel shortcut, give-target picker and portable stations.
+softdepend:
+  - DeluxeMenus
+  - PlaceholderAPI
+commands:
+  givetarget:
+    description: 選擇工具箱要把物品給誰
+    usage: /givetarget
+    aliases: [gt]
+  mobile:
+    description: 開啟行動工作站
+    usage: /mobile <workbench|enderchest|anvil|enchanting|grindstone|stonecutter|loom|cartography|smithing>
+    aliases: [mb]
+  spawn:
+    description: 傳送到世界出生點
+    usage: /spawn

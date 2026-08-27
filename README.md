@@ -25,6 +25,7 @@
 | **啟動腳本** | `windows/start.bat` | 起隧道、起地圖同步、起伺服器，並處理當機與快速重啟的競態 |
 | **備份** | `windows/backup-world.ps1` | 暫停自動存檔 → 落盤 → 複製 → 壓縮 → 輪替 |
 | **看門狗** | `windows/watchdog.ps1` | 每 5 分鐘檢查，伺服器意外死掉就拉起來 |
+| **PanelKey 外掛** | `bundled/PanelKey-*.jar`<br>`bundled/panelkey-src/` | 遊戲內管理面板：`/menu`、`/spawn`、行動工作台、指定給予對象。含原始碼 |
 | **地圖發布** | `windows/sync-map.ps1`<br>`windows/sync-loop.ps1` | 把 BlueMap 的靜態輸出推到 Cloudflare Pages |
 
 ---
@@ -46,7 +47,7 @@ pip install discord.py
 
 ### 用安裝程式（最省事）
 
-到 [Releases](../../releases) 下載 `MinecraftToolkitSetup.exe` 執行。它會檢查環境、下載 Paper、開啟 RCON、寫好 `config.json`、註冊排程工作、建立防火牆規則和桌面捷徑。
+到 [Releases](../../releases) 下載 `MinecraftToolkitSetup.exe` 執行。它會檢查環境、下載 Paper、安裝內建的 PanelKey 外掛、開啟 RCON、寫好 `config.json`、註冊排程工作、建立防火牆規則和桌面捷徑。
 
 需要系統管理員權限（防火牆規則要）。
 

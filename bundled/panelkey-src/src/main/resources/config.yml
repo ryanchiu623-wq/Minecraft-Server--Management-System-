@@ -1,0 +1,22 @@
+# PanelKey
+#
+# The server cannot bind client keys. It can only react to actions the
+# vanilla client already reports - swapping hands is one of them, so
+# "sneak + swap hands" (Shift+F by default) becomes a workable shortcut.
+
+# Run from the console when the shortcut fires. %player% becomes the player's
+# name. It goes through the console because DeluxeMenus registers its open
+# commands dynamically and Player#performCommand cannot resolve them - that
+# path was tried first and failed every time.
+console-command: "dm open admin_panel %player%"
+
+# Only players with this permission trigger the shortcut. Everyone else
+# keeps normal offhand swapping. Leave empty to allow everyone.
+permission: serverpanel.admin
+
+# true  = Shift+F (sneak + swap hands)
+# false = F alone, which costs you normal offhand swapping
+require-sneak: true
+
+# Log every swap-hands event and its outcome to the server log.
+debug: false

@@ -246,6 +246,16 @@ class Installer(tk.Tk):
         ttk.Label(row, foreground="#666",
                   text="　已經有 paper.jar 的話取消勾選即可").pack(side="left")
 
+        self.var_panelkey = tk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            core, variable=self.var_panelkey,
+            text="安裝 PanelKey 外掛（/menu、/spawn、行動工作台）"
+        ).pack(anchor="w", pady=(6, 0))
+        ttk.Label(core, foreground="#666", wraplength=self.px(740),
+                  text="本工具自帶的小外掛，已包在安裝程式內，不需連網。"
+                       "選單本身由 DeluxeMenus 提供，要另外裝。"
+                  ).pack(anchor="w")
+
         # --- options ---
         opts = ttk.LabelFrame(root, text=" 設定與自動化 ", padding=self.PAD)
         opts.pack(fill="x", pady=6)
@@ -394,6 +404,7 @@ class Installer(tk.Tk):
             steps = [s for s, on in (
                 ("copy", True),
                 ("paper", self.var_paper.get()),
+                ("panelkey", self.var_panelkey.get()),
                 ("rcon", self.var_rcon.get()),
                 ("config", True),
                 ("tasks", self.var_tasks.get()),
@@ -470,6 +481,34 @@ class Installer(tk.Tk):
         eula = os.path.join(server, "eula.txt")
         if not os.path.exists(eula):
             self.say("  注意：第一次啟動後要把 eula.txt 改成 eula=true")
+
+    def _step_panelkey(self, server, backup, toolkit, port):
+        self.say("安裝 PanelKey 外掛 …")
+        source_dir = os.path.join(bundle_dir(), "bundled")
+        jars = [f for f in os.listdir(source_dir)
+                if f.startswith("PanelKey") and f.endswith(".jar")]             if os.path.isdir(source_dir) else []
+        if not jars:
+            self.say("  安裝程式內找不到 PanelKey，跳過")
+            return
+        jar = sorted(jars)[-1]
+        plugins = os.path.join(server, "plugins")
+        os.makedirs(plugins, exist_ok=True)
+
+        # An older build left in place wins over the new one at load time, so
+        # clear any previous copy rather than ending up with two.
+        for old in os.listdir(plugins):
+            if old.startswith("PanelKey") and old.endswith(".jar")                     and old != jar:
+                try:
+                    os.remove(os.path.join(plugins, old))
+                    self.say("  移除舊版 %s" % old)
+                except OSError:
+                    pass
+
+        shutil.copy2(os.path.join(source_dir, jar),
+                     os.path.join(plugins, jar))
+        self.say("  已安裝 %s" % jar)
+        self.say("  /menu 需要 DeluxeMenus，%panelkey_target% 需要 "
+                 "PlaceholderAPI——兩者都要自己裝")
 
     def _step_rcon(self, server, backup, toolkit, port):
         path = os.path.join(server, "server.properties")

@@ -46,3 +46,7 @@ dist/
 .idea/
 Thumbs.db
 desktop.ini
+
+# The toolkit ships its own small plugin. *.jar above is aimed at server jars
+# and downloaded plugins; this one is ours and belongs in the repository.
+!bundled/*.jar

@@ -20,7 +20,7 @@ ROOT = os.path.dirname(HERE)
 NAME = "MinecraftToolkitSetup"
 
 # Payload folders shipped inside the exe. The separator is ; on Windows.
-DATA = ["scripts", "windows", "docs"]
+DATA = ["scripts", "windows", "docs", "bundled"]
 FILES = ["config.example.json", "README.md", "LICENSE", "requirements.txt"]
 
 

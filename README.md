@@ -46,7 +46,12 @@
 
 需要系統管理員權限（防火牆規則要）。裝完啟動伺服器，然後開 `http://localhost:8099`。
 
-不想用安裝程式的話，[docs/INSTALL.md](docs/INSTALL.md) 有從零開始的完整手動流程，含 playit、Cloudflare DNS、基岩版互通、網頁地圖、Discord 機器人，每一節都附驗證步驟。
+不想用安裝程式的話，有兩份從零開始的手動流程，每一節都附驗證步驟。差別只在怎麼讓外面連進來，**只需要看一份**：
+
+| | 適用 |
+|---|---|
+| [INSTALL.md](docs/INSTALL.md) | **多數人選這份。** 用 playit 隧道，不需要公網 IP、不用動路由器。台灣家用寬頻常見的 CGNAT 也能用 |
+| [INSTALL-port-forwarding.md](docs/INSTALL-port-forwarding.md) | 你有公網 IP，想直連降低延遲。需要自己設定路由器，而且你家 IP 會曝光 |
 
 ---
 

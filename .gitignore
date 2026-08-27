@@ -1,0 +1,48 @@
+# Your own settings. config.example.json is the template that ships; the real
+# one carries your domains, IDs and paths, so it never gets committed.
+config.json
+
+# Generated at runtime. web-console.config.json holds the control token.
+web-console.config.json
+*.log
+logs/
+
+# Anything holding a credential. Keep tokens in files outside the repo and
+# point at them from config.json.
+*token*.txt
+*.secret
+.secrets/
+
+# Server data - never belongs in a tools repository.
+world/
+world_nether/
+world_the_end/
+crash-reports/
+cache/
+plugins/
+libraries/
+versions/
+*.jar
+server.properties
+ops.json
+whitelist.json
+banned-*.json
+usercache.json
+eula.txt
+server.running
+restart.lock
+watchdog-restarts.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*.v1
+build/
+dist/
+*.spec
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

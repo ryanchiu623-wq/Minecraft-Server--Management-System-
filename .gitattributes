@@ -1,0 +1,15 @@
+# Line endings matter here, so pin them rather than leaving it to core.autocrlf.
+#
+# cmd.exe needs CRLF: an LF-only .bat breaks multi-line if(...) blocks.
+# Windows PowerShell is likewise happiest with CRLF.
+* text=auto eol=lf
+
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+*.nbt        binary
+*.litematic  binary
+*.jar        binary
+*.zip        binary
+*.png        binary

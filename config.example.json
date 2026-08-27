@@ -1,0 +1,46 @@
+{
+  "_comment": "複製這個檔案為 config.json 再填入你的資訊。config.json 已被 .gitignore 排除。",
+
+  "serverDir": "C:\\mc-paper",
+  "backupDir": "C:\\mc-backup",
+  "startBat": "C:\\mc-paper\\start.bat",
+  "keepBackups": 7,
+
+  "java": {
+    "_comment": "host 是玩家用的公開位址；localPort 是伺服器實際監聽的埠",
+    "host": "mc.example.org",
+    "port": 25565,
+    "localPort": 25565
+  },
+
+  "bedrock": {
+    "_comment": "tunnelPort 是 playit 給的公開 UDP 埠，通常不是 19132",
+    "host": "bedrock.example.org",
+    "tunnelPort": 19132,
+    "localPort": 19132
+  },
+
+  "mapUrl": "https://your-map.pages.dev",
+
+  "webConsole": {
+    "_comment": "host 留 0.0.0.0 讓區網其他裝置連得到；控制權杖會自動產生在 web-console.config.json",
+    "host": "0.0.0.0",
+    "port": 8099
+  },
+
+  "discord": {
+    "_comment": "tokenFile 指向一個只有 bot token 的純文字檔，不要把 token 寫在這裡",
+    "tokenFile": "C:\\Users\\you\\.secrets\\discord-bot-token.txt",
+    "authorizedUserIds": ["000000000000000000"],
+    "rconUserIds": ["000000000000000000"],
+    "logChannelId": "000000000000000000"
+  },
+
+  "cloudflare": {
+    "_comment": "把 BlueMap 產生的靜態網頁推到 Cloudflare Pages；不用的話整段留空即可",
+    "projectName": "your-map",
+    "accountId": "",
+    "tokenFile": "C:\\Users\\you\\.secrets\\cloudflare-token.txt",
+    "webDir": "C:\\mc-paper\\bluemap\\web"
+  }
+}

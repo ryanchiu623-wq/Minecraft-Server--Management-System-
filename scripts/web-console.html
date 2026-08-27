@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minecraft 內網控制台</title>
+<style>
+  :root {
+    --ground: #eef0ec;
+    --panel: #ffffff;
+    --sunk: #e6e9e4;
+    --rule: #ccd1c8;
+    --rule-soft: #dde1d8;
+    --ink: #1b1f1c;
+    --ink-2: #4c544b;
+    --ink-3: #7b8472;
+    --accent: #1f7a75;
+    --ok: #3d7a38;
+    --warn: #96670f;
+    --crit: #a8412f;
+    --ok-bg: #e1ecdc;
+    --warn-bg: #f4e9d1;
+    --crit-bg: #f3ded9;
+    --f-ui: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+    --f-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #131614;
+      --panel: #1c201d;
+      --sunk: #171a18;
+      --rule: #313830;
+      --rule-soft: #272d26;
+      --ink: #e9ede7;
+      --ink-2: #b2baaf;
+      --ink-3: #7f887d;
+      --accent: #58bdb5;
+      --ok: #85c07b;
+      --warn: #dcb056;
+      --crit: #e28a77;
+      --ok-bg: #1f2d1d;
+      --warn-bg: #302713;
+      --crit-bg: #321f1b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--f-ui); font-size: 15px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 26px 20px 72px;
+          display: flex; flex-direction: column; gap: 26px; }
+
+  /* header */
+  header { display: flex; flex-wrap: wrap; align-items: center;
+           justify-content: space-between; gap: 14px; }
+  h1 { font-size: 21px; font-weight: 800; margin: 0; letter-spacing: -.01em; }
+  .sub { font-family: var(--f-mono); font-size: 12px; color: var(--ink-3); margin: 2px 0 0; }
+  .pill { display: inline-flex; align-items: center; gap: 8px;
+          font-weight: 700; font-size: 15px; padding: 7px 15px;
+          border-radius: 999px; border: 1px solid; }
+  .pill .dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+  .pill.up   { color: var(--ok);   background: var(--ok-bg);   border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+  .pill.down { color: var(--crit); background: var(--crit-bg); border-color: color-mix(in srgb, var(--crit) 40%, transparent); }
+  .pill.wait { color: var(--ink-3); background: var(--sunk); border-color: var(--rule); }
+
+  /* tiles */
+  .tiles { display: grid; gap: 12px;
+           grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); }
+  .tile { background: var(--panel); border: 1px solid var(--rule);
+          border-radius: 4px; padding: 15px 16px 16px;
+          display: flex; flex-direction: column; gap: 3px; }
+  .tile .k { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .12em;
+             text-transform: uppercase; color: var(--ink-3); }
+  .tile .v { font-family: var(--f-mono); font-size: 25px; font-weight: 600;
+             font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .tile .n { font-size: 12.5px; color: var(--ink-3); }
+  .tile.ok   { border-left: 3px solid var(--ok); }
+  .tile.warn { border-left: 3px solid var(--warn); }
+  .tile.crit { border-left: 3px solid var(--crit); }
+
+  /* meter */
+  .meter { height: 5px; border-radius: 3px; background: var(--sunk);
+           overflow: hidden; margin-top: 7px; }
+  .meter i { display: block; height: 100%; background: var(--accent); }
+
+  /* panels */
+  h2 { font-family: var(--f-mono); font-size: 11px; letter-spacing: .15em;
+       text-transform: uppercase; color: var(--ink-3); margin: 0 0 11px;
+       padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+  .card { background: var(--panel); border: 1px solid var(--rule);
+          border-radius: 4px; padding: 18px 18px 20px; }
+
+  .rows { display: flex; flex-direction: column; gap: 9px; }
+  .row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px;
+         font-size: 14px; }
+  .row .lbl { color: var(--ink-3); min-width: 82px; }
+  .row .val { font-family: var(--f-mono); font-size: 13.5px; }
+  .row a { color: var(--accent); }
+
+  /* controls */
+  .btns { display: flex; flex-wrap: wrap; gap: 9px; }
+  button {
+    font: inherit; font-weight: 600; font-size: 14px; cursor: pointer;
+    padding: 9px 16px; border-radius: 3px; color: var(--ink);
+    background: var(--sunk); border: 1px solid var(--rule);
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.danger { color: var(--crit); border-color: color-mix(in srgb, var(--crit) 45%, var(--rule)); }
+  button.danger:hover:not(:disabled) { background: var(--crit-bg); color: var(--crit); border-color: var(--crit); }
+
+  input[type=text], input[type=password] {
+    font: inherit; font-family: var(--f-mono); font-size: 13.5px;
+    padding: 9px 11px; border-radius: 3px; color: var(--ink);
+    background: var(--sunk); border: 1px solid var(--rule); min-width: 0;
+  }
+  input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .field { display: flex; gap: 9px; flex-wrap: wrap; }
+  .field input { flex: 1 1 220px; }
+
+  pre {
+    margin: 12px 0 0; padding: 13px 14px; background: var(--sunk);
+    border: 1px solid var(--rule-soft); border-radius: 3px;
+    font-family: var(--f-mono); font-size: 12.5px; line-height: 1.55;
+    max-height: 300px; overflow: auto; white-space: pre-wrap;
+    word-break: break-word; color: var(--ink-2);
+  }
+  pre:empty { display: none; }
+
+  .hint { font-size: 12.5px; color: var(--ink-3); margin: 9px 0 0; }
+  .grid2 { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  footer { font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Minecraft 內網控制台</h1>
+      <p class="sub" id="stamp">連線中…</p>
+    </div>
+    <span class="pill wait" id="pill"><span class="dot"></span><span id="pilltext">讀取中</span></span>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2>連線位址</h2>
+      <div class="rows" id="addr"></div>
+    </div>
+
+    <div class="card">
+      <h2>維護狀態</h2>
+      <div class="rows" id="maint"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>控制</h2>
+    <div class="field" style="margin-bottom:14px">
+      <input type="password" id="token" placeholder="控制權杖（只需輸入一次）" autocomplete="off">
+      <button id="savetok">記住</button>
+    </div>
+    <div class="btns">
+      <button data-act="start">啟動伺服器</button>
+      <button data-act="stop" class="danger">關閉伺服器</button>
+      <button data-act="backup">立即備份</button>
+      <button data-act="render">同步地圖</button>
+      <button data-act="playit">重啟 playit</button>
+    </div>
+    <pre id="actout"></pre>
+  </div>
+
+  <div class="card">
+    <h2>RCON 指令</h2>
+    <form class="field" id="rconform">
+      <input type="text" id="cmd" placeholder="例如：list、say 大家好、tps" autocomplete="off">
+      <button type="submit">送出</button>
+    </form>
+    <p class="hint">以主控台權限執行，等同在伺服器視窗直接輸入。</p>
+    <pre id="rconout"></pre>
+  </div>
+
+  <div class="card">
+    <h2>伺服器日誌 <span style="float:right;text-transform:none;letter-spacing:0"><label style="font-size:12px"><input type="checkbox" id="tail" checked> 自動更新</label></span></h2>
+    <pre id="log">讀取中…</pre>
+  </div>
+
+  <footer>只接受內網連線。權杖存在這台瀏覽器的 localStorage，不會送到伺服器以外的地方。</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let busy = false;
+
+/* ---------- token ---------- */
+const TOKEN_KEY = "mc-console-token";
+try { $("token").value = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) {}
+$("savetok").onclick = () => {
+  try { localStorage.setItem(TOKEN_KEY, $("token").value.trim()); } catch (e) {}
+  $("savetok").textContent = "已記住";
+  setTimeout(() => ($("savetok").textContent = "記住"), 1500);
+};
+const token = () => $("token").value.trim();
+
+/* ---------- rendering ---------- */
+function tile(cls, key, value, note, meter) {
+  const m = meter == null ? "" :
+    `<div class="meter"><i style="width:${Math.max(0, Math.min(100, meter))}%"></i></div>`;
+  return `<div class="tile ${cls}">
+    <span class="k">${key}</span>
+    <span class="v">${value}</span>
+    <span class="n">${note || ""}</span>${m}</div>`;
+}
+
+function render(s) {
+  if (s.error) { $("stamp").textContent = "取數失敗：" + s.error; return; }
+
+  const up = s.java && s.java.ok;
+  const pill = $("pill");
+  pill.className = "pill " + (up ? "up" : "down");
+  $("pilltext").textContent = up ? "伺服器上線" : "伺服器離線";
+  $("stamp").textContent = "更新於 " + new Date((s.at || 0) * 1000).toLocaleTimeString();
+
+  const p = s.players, tps = s.tps, heap = s.heap || {};
+  const tiles = [];
+
+  tiles.push(tile(up ? "ok" : "crit", "Java", up ? "線上" : "離線",
+    s.java ? s.java.detail : ""));
+
+  tiles.push(tile(p && p.online > 0 ? "ok" : "", "玩家",
+    p ? `${p.online}/${p.max}` : "—",
+    p && p.names.length ? p.names.join("、") : "目前無人"));
+
+  const t = tps ? tps[0] : null;
+  tiles.push(tile(t == null ? "" : (t >= 19 ? "ok" : t >= 15 ? "warn" : "crit"),
+    "TPS", t == null ? "—" : t.toFixed(1),
+    tps ? `5m ${tps[1].toFixed(1)}　15m ${tps[2].toFixed(1)}` : ""));
+
+  const pct = heap.committed ? (heap.used / heap.committed) * 100 : null;
+  tiles.push(tile(pct == null ? "" : (pct < 80 ? "ok" : "warn"), "記憶體",
+    heap.used == null ? "—" : heap.used + " MB",
+    heap.committed ? "配置 " + heap.committed + " MB" : "", pct));
+
+  tiles.push(tile(s.playit ? (s.tunnel && s.tunnel.ok ? "ok" : "warn") : "crit",
+    "隧道", s.playit ? (s.tunnel && s.tunnel.ok ? "正常" : "無回應") : "未執行",
+    s.tunnel ? s.tunnel.detail : ""));
+
+  const out = s.outside;
+  tiles.push(tile(out === true ? "ok" : out === false ? "crit" : "",
+    "外部視角", out === true ? "連得進來" : out === false ? "看不到" : "未確認",
+    "第三方檢測"));
+
+  $("tiles").innerHTML = tiles.join("");
+
+  const a = s.addresses || {};
+  $("addr").innerHTML = `
+    <div class="row"><span class="lbl">Java 版</span><span class="val">${a.java || "—"}</span></div>
+    <div class="row"><span class="lbl">基岩版</span><span class="val">${a.bedrock || "—"}　埠 ${a.bedrock_port || "—"}</span></div>
+    <div class="row"><span class="lbl">網頁地圖</span><a href="${a.map || "#"}" target="_blank" rel="noopener">${a.map || "—"}</a></div>
+    <div class="row"><span class="lbl">基岩本機</span><span class="val">${s.bedrock && s.bedrock.ok ? "正常" : "無回應"}</span></div>`;
+
+  const b = s.backup;
+  $("maint").innerHTML = `
+    <div class="row"><span class="lbl">最近備份</span><span class="val">${b ? b.age_h + " 小時前　" + b.mb + " MB" : "沒有備份"}</span></div>
+    <div class="row"><span class="lbl">備份份數</span><span class="val">${b ? b.count : "—"}</span></div>
+    <div class="row"><span class="lbl">地圖同步</span><span class="val">${s.sync_h == null ? "—" : s.sync_h + " 小時前"}</span></div>
+    <div class="row"><span class="lbl">playit</span><span class="val">${s.playit ? "執行中" : "已停止"}</span></div>`;
+}
+
+/* ---------- polling ---------- */
+async function poll() {
+  try {
+    const r = await fetch("/api/status", { cache: "no-store" });
+    render(await r.json());
+  } catch (e) {
+    $("stamp").textContent = "連不上控制台服務";
+  }
+}
+
+async function pollLog() {
+  if (!$("tail").checked) return;
+  try {
+    const r = await fetch("/api/log", { cache: "no-store" });
+    const j = await r.json();
+    const el = $("log");
+    const stick = el.scrollTop + el.clientHeight >= el.scrollHeight - 24;
+    el.textContent = (j.lines || []).join("\n");
+    if (stick) el.scrollTop = el.scrollHeight;
+  } catch (e) {}
+}
+
+/* ---------- actions ---------- */
+async function post(url, payload, outEl) {
+  if (busy) return;
+  if (!token()) { outEl.textContent = "請先填入控制權杖。"; return; }
+  busy = true;
+  document.querySelectorAll("button[data-act]").forEach(b => b.disabled = true);
+  outEl.textContent = "執行中…";
+  try {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(Object.assign({ token: token() }, payload)),
+    });
+    const j = await r.json();
+    outEl.textContent = j.error || j.message || j.output || JSON.stringify(j);
+  } catch (e) {
+    outEl.textContent = "請求失敗：" + e;
+  } finally {
+    busy = false;
+    document.querySelectorAll("button[data-act]").forEach(b => b.disabled = false);
+    poll();
+  }
+}
+
+document.querySelectorAll("button[data-act]").forEach(btn => {
+  btn.onclick = () => {
+    const act = btn.dataset.act;
+    if (act === "stop" && !confirm("確定要關閉伺服器？線上玩家都會被斷線。")) return;
+    post("/api/action", { action: act }, $("actout"));
+  };
+});
+
+$("rconform").onsubmit = (e) => {
+  e.preventDefault();
+  const c = $("cmd").value.trim();
+  if (c) post("/api/rcon", { command: c }, $("rconout")).then(() => ($("cmd").value = ""));
+};
+
+poll(); pollLog();
+setInterval(poll, 5000);
+setInterval(pollLog, 5000);
+</script>
+</body>
+</html>

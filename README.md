@@ -44,6 +44,10 @@ pip install discord.py
 
 ## 安裝
 
+完整的逐步流程（含 playit 對外開放、基岩版互通、網頁地圖、Discord bot、排程自動化）在 **[docs/INSTALL.md](docs/INSTALL.md)**。
+
+下面是最短路徑：
+
 **1. 複製設定範本**
 
 ```bash

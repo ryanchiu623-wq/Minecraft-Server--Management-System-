@@ -192,14 +192,41 @@ class Installer(tk.Tk):
 
     # ------------------------------------------------------------------ ui
     def _build(self):
-        root = ttk.Frame(self, padding=self.PAD)
-        root.pack(fill="both", expand=True)
+        outer = ttk.Frame(self, padding=self.PAD)
+        outer.pack(fill="both", expand=True)
 
-        ttk.Label(root, text="Minecraft Server Toolkit",
+        ttk.Label(outer, text="Minecraft Server Toolkit",
                   font=("Segoe UI", 16, "bold")).pack(anchor="w")
-        ttk.Label(root, foreground="#666",
+        ttk.Label(outer, foreground="#666",
                   text="自動完成 INSTALL.md 的安裝流程").pack(anchor="w",
                                                              pady=(0, 8))
+
+        # The form is taller than a scaled window can hold: at 2.25x the
+        # sections below add up past the screen, and the last one was being
+        # clipped away with only its frame title left showing. Scroll the form
+        # and keep the action bar pinned, so the install button cannot go
+        # off-screen no matter how much the display scales.
+        bottom = ttk.Frame(outer)
+        bottom.pack(side="bottom", fill="both")
+
+        canvas = tk.Canvas(outer, highlightthickness=0, borderwidth=0)
+        bar = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=bar.set)
+        bar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        root = ttk.Frame(canvas)
+        window = canvas.create_window((0, 0), window=root, anchor="nw")
+
+        def _resize(_event=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            canvas.itemconfigure(window, width=canvas.winfo_width())
+
+        root.bind("<Configure>", _resize)
+        canvas.bind("<Configure>", _resize)
+        canvas.bind_all(
+            "<MouseWheel>",
+            lambda e: canvas.yview_scroll(int(-e.delta / 120), "units"))
 
         # --- environment ---
         env = ttk.LabelFrame(root, text=" 環境檢查 ", padding=self.PAD)
@@ -313,15 +340,19 @@ class Installer(tk.Tk):
         self.var_port = tk.StringVar(value="8099")
         ttk.Entry(row, textvariable=self.var_port, width=8).pack(side="left")
 
-        # --- action ---
-        bar = ttk.Frame(root)
-        bar.pack(fill="x", pady=(10, 4))
-        self.btn = ttk.Button(bar, text="開始安裝", command=self._start)
+        # --- action (pinned, never scrolls out of reach) ---
+        act = ttk.Frame(bottom)
+        act.pack(fill="x", pady=(10, 2))
+        self.btn = ttk.Button(act, text="開始安裝", command=self._start)
         self.btn.pack(side="left")
-        self.progress = ttk.Progressbar(bar, mode="determinate", maximum=100)
+        self.progress = ttk.Progressbar(act, mode="determinate", maximum=100)
         self.progress.pack(side="left", fill="x", expand=True, padx=10)
 
-        self.log = tk.Text(root, height=9, wrap="word",
+        self.status = ttk.Label(bottom, foreground="#666", anchor="w",
+                                text="")
+        self.status.pack(fill="x", pady=(0, 4))
+
+        self.log = tk.Text(bottom, height=8, wrap="word",
                            font=("Consolas", 9), state="disabled")
         self.log.pack(fill="both", expand=True)
 
@@ -349,6 +380,8 @@ class Installer(tk.Tk):
                     self.log.configure(state="disabled")
                 elif kind == "progress":
                     self.progress["value"] = payload
+                elif kind == "status":
+                    self.status.configure(text=payload)
                 elif kind == "env":
                     key, text, colour = payload
                     self.env_labels[key].configure(text=text, foreground=colour)
@@ -367,6 +400,14 @@ class Installer(tk.Tk):
 
     def say(self, text):
         self._post("log", text)
+
+    def status_line(self, text):
+        """What is happening right now, with the destination spelled out.
+
+        A progress bar alone does not say what is being fetched or where it is
+        going, which is the first thing anyone asks when an install stalls.
+        """
+        self._post("status", text)
 
     # ------------------------------------------------------------ env check
     def _check_environment(self):
@@ -456,6 +497,7 @@ class Installer(tk.Tk):
                 getattr(self, "_step_" + name)(server, backup, toolkit, port)
                 tick()
 
+            self.status_line("")
             self.say("")
             self.say("安裝完成。")
             self._post("done", (True,
@@ -463,6 +505,7 @@ class Installer(tk.Tk):
                                 "權杖在 %s\\web-console.config.json"
                                 % (port, toolkit)))
         except Exception as exc:
+            self.status_line("")
             self.say("")
             self.say("失敗：%s" % exc)
             self._post("done", (False, "安裝失敗：\n%s" % exc))
@@ -497,6 +540,7 @@ class Installer(tk.Tk):
         url, name, build = paper_download(version)
         self.say("  build %s → %s" % (build, name))
         target = os.path.join(server, "paper.jar")
+        self.status_line("下載 %s → %s" % (name, target))
         with urllib.request.urlopen(
                 urllib.request.Request(url, headers=UA), timeout=120) as resp:
             total = int(resp.headers.get("Content-Length") or 0)
@@ -550,6 +594,7 @@ class Installer(tk.Tk):
         for item in plugcat.CATALOGUE:
             if not self.plug_vars[item.key].get():
                 continue
+            self.status_line("下載 %s → %s" % (item.name, plugins_dir))
             try:
                 filename, label = plugcat.download(
                     item, plugins_dir,

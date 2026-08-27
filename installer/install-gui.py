@@ -257,7 +257,16 @@ class Installer(tk.Tk):
         ).pack(anchor="w", pady=(6, 0))
         ttk.Label(core, foreground="#666", wraplength=self.px(740),
                   text="本工具自帶的小外掛，已包在安裝程式內，不需連網。"
-                       "選單本身由 DeluxeMenus 提供，要另外裝。"
+                  ).pack(anchor="w")
+
+        self.var_menus = tk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            core, variable=self.var_menus,
+            text="安裝管理選單（管理面板、工具箱、行動工作站、關閉確認）"
+        ).pack(anchor="w", pady=(6, 0))
+        ttk.Label(core, foreground="#666", wraplength=self.px(740),
+                  text="四份 DeluxeMenus 選單，同樣包在安裝程式內。已經有自己"
+                       "改過的選單就取消勾選，安裝程式不會覆蓋你的設定。"
                   ).pack(anchor="w")
 
         # --- plugins ---
@@ -429,8 +438,7 @@ class Installer(tk.Tk):
                 ("panelkey", self.var_panelkey.get()),
                 ("plugins",
                  any(v.get() for v in self.plug_vars.values())),
-                ("menus", self.var_panelkey.get()
-                 and self.plug_vars["deluxemenus"].get()),
+                ("menus", self.var_menus.get()),
                 ("rcon", self.var_rcon.get()),
                 ("config", True),
                 ("tasks", self.var_tasks.get()),
@@ -595,6 +603,14 @@ class Installer(tk.Tk):
                 names.append(os.path.splitext(f)[0])
         self.say("  已複製 %d 份選單：%s" % (len(names), "、".join(names)))
         self._register_menus(server, names)
+
+        have_dm = self.plug_vars["deluxemenus"].get() or any(
+            f.lower().startswith("deluxemenus") and f.endswith(".jar")
+            for f in os.listdir(os.path.join(server, "plugins")))
+        if not have_dm:
+            self.say("  ! 沒有 DeluxeMenus，這些選單不會載入，/menu 會沒反應")
+        if not self.plug_vars["placeholderapi"].get():
+            self.say("  ! 沒有 PlaceholderAPI，工具箱的「指定給誰」會失效")
 
     def _register_menus(self, server, names):
         """Register the menus in DeluxeMenus' config.yml.

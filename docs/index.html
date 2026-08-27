@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minecraft Server Management System</title>
+<meta name="description" content="在家用 Windows 電腦上自架 Minecraft 伺服器的管理工具：內網控制台、Discord 遙控、自動備份、看門狗、排程重啟。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+  :root {
+    --ground: #f1f3ef;
+    --panel: #ffffff;
+    --sunk: #e7eae4;
+    --rule: #d2d7cc;
+    --rule-soft: #e0e4da;
+    --ink: #191d19;
+    --ink-2: #4a5248;
+    --ink-3: #79826f;
+    --accent: #1c6f6a;
+    --ok: #3d7a38;
+    --warn: #96670f;
+    --crit: #a8412f;
+    --ok-bg: #e2ecdd;
+    --shadow: 0 1px 2px rgba(20,28,20,.05), 0 10px 30px rgba(20,28,20,.06);
+    --f-sans: "IBM Plex Sans", "Noto Sans TC", system-ui, sans-serif;
+    --f-cjk: "Noto Sans TC", "IBM Plex Sans", system-ui, sans-serif;
+    --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #111413;
+      --panel: #1a1e1c;
+      --sunk: #151917;
+      --rule: #2e352f;
+      --rule-soft: #242a25;
+      --ink: #e9ede7;
+      --ink-2: #adb5ab;
+      --ink-3: #7c857a;
+      --accent: #5cc3ba;
+      --ok: #85c07b;
+      --warn: #dcb056;
+      --crit: #e28a77;
+      --ok-bg: #1e2c1c;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 34px rgba(0,0,0,.32);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--f-cjk); font-size: 16.5px; line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+  .prose { max-width: 68ch; }
+
+  /* ---------- masthead ---------- */
+  header { padding: 88px 0 72px; border-bottom: 1px solid var(--rule); }
+  .eyebrow {
+    font-family: var(--f-mono); font-size: 12px; font-weight: 500;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--accent);
+    margin: 0 0 18px;
+  }
+  h1 {
+    font-family: var(--f-sans); font-weight: 700;
+    font-size: clamp(32px, 5.2vw, 52px); line-height: 1.1;
+    letter-spacing: -.022em; margin: 0 0 22px; text-wrap: balance;
+  }
+  .lede { font-size: 19px; color: var(--ink-2); margin: 0 0 32px; max-width: 60ch; }
+  .lede strong { color: var(--ink); font-weight: 500; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-family: var(--f-sans); font-weight: 600; font-size: 15px;
+    text-decoration: none; padding: 12px 22px; border-radius: 4px;
+    border: 1px solid var(--rule); color: var(--ink); background: var(--panel);
+    transition: border-color .15s, color .15s;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary {
+    background: var(--accent); border-color: var(--accent);
+    color: var(--ground);
+  }
+  .btn.primary:hover { filter: brightness(1.08); color: var(--ground); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .meta { font-family: var(--f-mono); font-size: 13px; color: var(--ink-3); }
+
+  /* ---------- sections ---------- */
+  section { padding: 72px 0; border-bottom: 1px solid var(--rule); }
+  section:last-of-type { border-bottom: 0; }
+  h2 {
+    font-family: var(--f-sans); font-weight: 700; font-size: 13px;
+    letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3);
+    margin: 0 0 28px;
+  }
+  h3 {
+    font-family: var(--f-cjk); font-weight: 700; font-size: 20px;
+    margin: 0 0 10px; letter-spacing: -.01em;
+  }
+  p { margin: 0 0 18px; }
+  p:last-child { margin-bottom: 0; }
+  a { color: var(--accent); }
+
+  /* ---------- console mock ---------- */
+  .console {
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 6px;
+    box-shadow: var(--shadow); overflow: hidden; margin: 8px 0 0;
+  }
+  .console-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--rule);
+    font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-3);
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 7px; font-weight: 600;
+    font-size: 13px; padding: 4px 12px; border-radius: 999px;
+    color: var(--ok); background: var(--ok-bg);
+    border: 1px solid color-mix(in srgb, var(--ok) 38%, transparent);
+    font-family: var(--f-cjk);
+  }
+  .pill i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .tiles {
+    display: grid; gap: 1px; background: var(--rule-soft);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  .tile { background: var(--panel); padding: 16px 18px 18px; }
+  .tile .k {
+    font-family: var(--f-mono); font-size: 10px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-3); display: block;
+  }
+  .tile .v {
+    font-family: var(--f-mono); font-size: 24px; font-weight: 600;
+    font-variant-numeric: tabular-nums; display: block; margin: 3px 0 1px;
+  }
+  .tile .n { font-size: 12px; color: var(--ink-3); }
+  .tile.ok { box-shadow: inset 3px 0 0 var(--ok); }
+  .tile.warn { box-shadow: inset 3px 0 0 var(--warn); }
+  .meter { height: 4px; border-radius: 2px; background: var(--sunk); margin-top: 8px; overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 53%; background: var(--accent); }
+  .console-log {
+    font-family: var(--f-mono); font-size: 12px; line-height: 1.7;
+    padding: 14px 18px; color: var(--ink-3); background: var(--sunk);
+    border-top: 1px solid var(--rule-soft); overflow-x: auto;
+    white-space: pre;
+  }
+  .caption { font-size: 13.5px; color: var(--ink-3); margin: 14px 0 0; }
+
+  /* ---------- feature list ---------- */
+  .grid { display: grid; gap: 34px 40px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid p { font-size: 15.5px; color: var(--ink-2); }
+  .num {
+    font-family: var(--f-mono); font-size: 11px; color: var(--accent);
+    letter-spacing: .1em; display: block; margin-bottom: 6px;
+  }
+
+  /* ---------- tables ---------- */
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 460px; }
+  th {
+    text-align: left; font-family: var(--f-mono); font-size: 10.5px;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3);
+    padding: 0 16px 9px 0; border-bottom: 1px solid var(--rule); white-space: nowrap;
+  }
+  td { padding: 13px 16px 13px 0; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td code, p code, li code {
+    font-family: var(--f-mono); font-size: .88em; background: var(--sunk);
+    border: 1px solid var(--rule-soft); border-radius: 3px; padding: 1px 5px;
+  }
+
+  /* ---------- honest limits ---------- */
+  .limits { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; }
+  .limits li { padding-left: 22px; position: relative; color: var(--ink-2); font-size: 15.5px; }
+  .limits li::before {
+    content: ""; position: absolute; left: 0; top: .72em;
+    width: 9px; height: 1.5px; background: var(--ink-3);
+  }
+  .limits b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- docs ---------- */
+  .docs { display: flex; flex-direction: column; gap: 2px; }
+  .doc {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px;
+    padding: 18px 0; border-bottom: 1px solid var(--rule-soft);
+    text-decoration: none; color: inherit;
+  }
+  .doc:last-child { border-bottom: 0; }
+  .doc:hover .doc-t { color: var(--accent); }
+  .doc-t { font-weight: 700; font-size: 17px; }
+  .doc-d { color: var(--ink-3); font-size: 14.5px; }
+
+  footer {
+    padding: 44px 0 64px; font-size: 13.5px; color: var(--ink-3);
+    border-top: 1px solid var(--rule);
+  }
+  footer a { color: var(--ink-3); }
+
+  @media (max-width: 640px) {
+    header { padding: 56px 0 48px; }
+    section { padding: 52px 0; }
+    body { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <p class="eyebrow">Minecraft Server Management System</p>
+    <h1>在自己的電腦上開伺服器，<br>然後讓它自己撐著。</h1>
+    <p class="lede">
+      一套裝在家用 Windows 機器上的管理工具。<strong>開伺服器不難，難的是它要一直開著</strong>——
+      當掉要有人拉起來、世界要有人備份、朋友連不進來要查得出是哪一層壞了。這些是它處理的事。
+    </p>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/releases/latest">下載安裝程式</a>
+      <a class="btn" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-">原始碼</a>
+      <span class="meta">Windows&nbsp;·&nbsp;MIT&nbsp;·&nbsp;約 12&nbsp;MB</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>控制台</h2>
+    <div class="console">
+      <div class="console-bar">
+        <span>mc.example.org</span>
+        <span class="pill"><i></i>伺服器上線</span>
+      </div>
+      <div class="tiles">
+        <div class="tile ok"><span class="k">Java</span><span class="v">線上</span><span class="n">Paper 26.2</span></div>
+        <div class="tile ok"><span class="k">玩家</span><span class="v">3/20</span><span class="n">線上中</span></div>
+        <div class="tile ok"><span class="k">TPS</span><span class="v">20.0</span><span class="n">5m 20.0　15m 19.9</span></div>
+        <div class="tile"><span class="k">記憶體</span><span class="v">544 MB</span><span class="n">配置 1024 MB</span><div class="meter"><i></i></div></div>
+        <div class="tile ok"><span class="k">隧道</span><span class="v">正常</span><span class="n">外部連得進來</span></div>
+        <div class="tile warn"><span class="k">最近備份</span><span class="v">8.7 小時</span><span class="n">保留 7 份</span></div>
+      </div>
+      <div class="console-log">[22:14:03] [Server thread/INFO]: Starting minecraft server version 1.21
+[22:14:07] [Server thread/INFO]: [Geyser-Spigot] Started Geyser on 0.0.0.0:19132
+[22:14:09] [Server thread/INFO]: Done (6.412s)! For help, type "help"
+[22:31:55] [Server thread/INFO]: [Rcon] 伺服器將在 5 分鐘後重啟（定期重啟以釋放記憶體）</div>
+    </div>
+    <p class="caption">瀏覽器開的管理頁，只接受內網連線。手機、平板、另一台電腦都能開。</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>它做什麼</h2>
+    <div class="grid">
+      <div>
+        <span class="num">01</span>
+        <h3>讓外面連得進來</h3>
+        <p>家用網路沒有固定 IP、開不了通訊埠。用 playit 隧道繞過，不必動路由器；有公網 IP 的話也可以直接轉埠。基岩版的朋友——手機、平板、主機——透過 Geyser 和 Floodgate 連進同一個伺服器，不需要 Java 帳號。</p>
+      </div>
+      <div>
+        <span class="num">02</span>
+        <h3>當掉了自己爬起來</h3>
+        <p>看門狗每五分鐘檢查一次，伺服器意外死掉就重新啟動，並且分得出「你按了關閉」和「它自己掛了」。連續失敗會停手並留下紀錄，而不是無限重啟一個壞掉的東西。</p>
+      </div>
+      <div>
+        <span class="num">03</span>
+        <h3>備份不會壞掉存檔</h3>
+        <p>先暫停自動存檔、把世界落盤、複製、壓縮，然後確認自動存檔真的恢復了——沒恢復就留下警告檔並通知。備份腳本讓存檔停在關閉狀態，是最容易發生又最難察覺的災難。</p>
+      </div>
+      <div>
+        <span class="num">04</span>
+        <h3>重啟前會先講</h3>
+        <p>排程重啟在 5、3、1 分鐘各廣播一次，最後 30 秒開始倒數，存檔後才關。不會有人蓋到一半突然被踢下線。</p>
+      </div>
+      <div>
+        <span class="num">05</span>
+        <h3>在外面也能管</h3>
+        <p>Discord 機器人可以查狀態、開關伺服器、下主控台指令，回覆只有你看得到。人不在電腦前也不用開遠端桌面。</p>
+      </div>
+      <div>
+        <span class="num">06</span>
+        <h3>壞了查得出是哪一層</h3>
+        <p>健康檢查分六層：本機服務、DNS、隧道、外部視角、網頁地圖。由上往下排，因為下層的問題通常是上層造成的——從最上面的失敗項開始查就對了。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>安裝</h2>
+    <div class="prose">
+      <p>下載 <code>MinecraftToolkitSetup.exe</code> 執行。它會檢查環境、下載 Paper、抓外掛、開啟 RCON、寫設定、註冊排程工作、建立防火牆規則。每一項都能個別取消勾選。</p>
+      <p>需要系統管理員權限，因為要建防火牆規則。裝完啟動伺服器，然後開 <code>http://localhost:8099</code>。</p>
+      <p>不想用安裝程式的話，兩份手動流程都是從零開始寫的，每一節都附驗證步驟。</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>需要什麼</h2>
+    <div class="scroll">
+      <table>
+        <tbody>
+          <tr><td style="width:180px">作業系統</td><td>Windows 10 或 11</td></tr>
+          <tr><td>Java</td><td>21 以上（Paper 的要求）</td></tr>
+          <tr><td>記憶體</td><td>建議 8 GB 以上，伺服器本身配 4 GB 綽綽有餘</td></tr>
+          <tr><td>網路</td><td>一般家用寬頻即可。用 playit 的話不需要公網 IP</td></tr>
+          <tr><td>Python</td><td>3.10 以上，只有手動安裝需要——安裝程式已內含</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>它不做什麼</h2>
+    <div class="prose">
+      <p style="color:var(--ink-2)">這是為了自己家裡那台電腦寫的，不是通用的伺服器管理平台。用之前知道這些比較好：</p>
+      <ul class="limits">
+        <li><b>只支援 Windows。</b>腳本用了工作排程器、PowerShell 和 Windows 防火牆，沒有 Linux 或 macOS 版本。</li>
+        <li><b>一次管一台伺服器。</b>沒有多實例、沒有多使用者、沒有權限分級。</li>
+        <li><b>控制台只在內網。</b>它能執行任意主控台指令，所以刻意不對外開放。要在外面管理就用 Discord 機器人。</li>
+        <li><b>介面是繁體中文。</b>程式碼註解和提交訊息是英文，但使用者看到的文字沒有英文版。</li>
+        <li><b>不幫你付電費。</b>自架的前提是那台機器要開著。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>文件</h2>
+    <div class="docs">
+      <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/blob/main/docs/INSTALL.md">
+        <span class="doc-t">安裝流程（playit 隧道）</span>
+        <span class="doc-d">從零開始，不需要公網 IP。多數人看這份</span>
+      </a>
+      <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/blob/main/docs/INSTALL-port-forwarding.md">
+        <span class="doc-t">安裝流程（路由器轉埠）</span>
+        <span class="doc-d">有公網 IP、想直連降低延遲時看這份</span>
+      </a>
+      <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-#readme">
+        <span class="doc-t">專案說明</span>
+        <span class="doc-d">元件清單、設定、安全性，以及一節「踩過的坑」</span>
+      </a>
+      <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/blob/main/bundled/README.md">
+        <span class="doc-t">PanelKey 外掛</span>
+        <span class="doc-d">內建的遊戲內管理面板，含原始碼與建置方式</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    MIT 授權　·　<a href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-">GitHub</a>　·
+    這個頁面本身也在 repo 裡（<code>docs/index.html</code>）
+  </div>
+</footer>
+
+</body>
+</html>

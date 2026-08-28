@@ -42,6 +42,16 @@ NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 PROTECTED = ("documents", "pictures", "desktop", "videos", "music")
 
 
+def build_info():
+    """Which commit this installer was built from, if it was stamped."""
+    try:
+        with open(os.path.join(bundle_dir(), "build_info.json"),
+                  encoding="utf-8") as fh:
+            return json.load(fh)
+    except Exception:
+        return {}
+
+
 def bundle_dir():
     """Where the payload (scripts/, windows/) lives right now."""
     if getattr(sys, "frozen", False):
@@ -197,9 +207,14 @@ class Installer(tk.Tk):
 
         ttk.Label(outer, text="Minecraft Server Toolkit",
                   font=("Segoe UI", 16, "bold")).pack(anchor="w")
+        info = build_info()
+        stamp = ""
+        if info.get("commit"):
+            stamp = "　·　版本 %s（%s）" % (info["commit"],
+                                            info.get("built", ""))
         ttk.Label(outer, foreground="#666",
-                  text="自動完成 INSTALL.md 的安裝流程").pack(anchor="w",
-                                                             pady=(0, 8))
+                  text="自動完成 INSTALL.md 的安裝流程" + stamp
+                  ).pack(anchor="w", pady=(0, 8))
 
         # The form is taller than a scaled window can hold: at 2.25x the
         # sections below add up past the screen, and the last one was being

@@ -10,6 +10,8 @@ unpacked to the install directory at run time.
 Requires PyInstaller:  pip install pyinstaller
 """
 
+import datetime
+import json
 import os
 import shutil
 import subprocess
@@ -24,6 +26,31 @@ DATA = ["scripts", "windows", "docs", "bundled"]
 FILES = ["config.example.json", "README.md", "LICENSE", "requirements.txt"]
 
 
+def write_build_info():
+    """Record which commit this build came from.
+
+    An installer that cannot say what version it is makes a stale release
+    invisible - the exe on the releases page looks identical to a current one.
+    """
+    def git(*args):
+        try:
+            out = subprocess.run(["git"] + list(args), cwd=ROOT,
+                                 capture_output=True, text=True, timeout=30)
+            return out.stdout.strip() if out.returncode == 0 else ""
+        except Exception:
+            return ""
+
+    info = {
+        "commit": git("rev-parse", "--short", "HEAD") or "unknown",
+        "built": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "dirty": bool(git("status", "--porcelain")),
+    }
+    path = os.path.join(HERE, "build_info.json")
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(info, fh, indent=2)
+    return path, info
+
+
 def main():
     if os.name != "nt":
         raise SystemExit("這個安裝程式只能在 Windows 上建置。")
@@ -32,6 +59,10 @@ def main():
         import PyInstaller  # noqa: F401
     except ImportError:
         raise SystemExit("缺少 PyInstaller，請先執行：pip install pyinstaller")
+
+    info_path, info = write_build_info()
+    print("building from %s%s"
+          % (info["commit"], "  (未提交的變更)" if info["dirty"] else ""))
 
     args = [
         sys.executable, "-m", "PyInstaller",
@@ -57,6 +88,7 @@ def main():
         source = os.path.join(ROOT, name)
         if os.path.exists(source):
             args += ["--add-data", "%s;." % source]
+    args += ["--add-data", "%s;." % info_path]
 
     icon = os.path.join(HERE, "icon.ico")
     if os.path.exists(icon):

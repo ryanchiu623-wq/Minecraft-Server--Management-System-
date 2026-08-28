@@ -27,18 +27,29 @@ import subprocess
 import sys
 import time
 
-import rcon
-
 HERE = os.path.dirname(os.path.abspath(__file__))
+# Ahead of the sibling imports: run as a script Python adds this directory
+# itself, but imported from elsewhere it does not, and both need to work.
+sys.path.insert(0, HERE)
+
+import rcon      # noqa: E402
+import settings  # noqa: E402
+
+# The coordination files live with the server, not with this script.
+# start.bat writes server.running beside itself, and watchdog.ps1 reads it
+# from there; if this script kept its lock somewhere else the watchdog would
+# never see it and would race a restart already in progress.
+SERVER_DIR = settings.server_dir()
 LOG_PATH = os.path.join(HERE, 'scheduled-restart.log')
-START_BAT = os.path.join(HERE, 'start.bat')
+START_BAT = settings.get('startBat',
+                         default=os.path.join(SERVER_DIR, 'start.bat'))
 # watchdog.ps1 restarts the server whenever start.bat's "server.running"
 # marker is present but no java process is. For about two seconds after a
 # deliberate stop both of those are true, and a watchdog tick landing there
 # would launch a second start.bat alongside this one: the port is still free,
 # so both pass start.bat's guard, and the loser's java dies unable to bind.
 # This lock tells the watchdog a restart is already in hand.
-LOCK_PATH = os.path.join(HERE, 'restart.lock')
+LOCK_PATH = os.path.join(SERVER_DIR, 'restart.lock')
 GAME_PORT = 25565
 
 # Seconds before the restart, and what to say at that point. The action bar is

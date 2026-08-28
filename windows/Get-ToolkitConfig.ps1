@@ -1,4 +1,4 @@
-# Dot-source this to read the toolkit's config.json from PowerShell:
+﻿# Dot-source this to read the toolkit's config.json from PowerShell:
 #
 #     . (Join-Path $PSScriptRoot 'Get-ToolkitConfig.ps1')
 #     $cfg = Get-ToolkitConfig

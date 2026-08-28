@@ -26,8 +26,13 @@ $ErrorActionPreference = 'Stop'
 $scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
 if (-not $LogPath) { $LogPath = Join-Path $scriptDir 'backup-world.log' }
 
-$worldDir = Join-Path $scriptDir 'world'
-$rconPy   = Join-Path $scriptDir 'rcon.py'
+# The world and the RCON client live with the server, not with this script.
+# Resolving them next to the script only works when the toolkit was unpacked
+# into the server folder.
+$serverDir = Get-ToolkitValue $toolkit 'serverDir' $scriptDir
+$worldDir  = Join-Path $serverDir (Get-ToolkitValue $toolkit 'levelName' 'world')
+$rconPy    = Join-Path (Join-Path (Split-Path -Parent $PSScriptRoot) 'scripts') 'rcon.py'
+if (-not (Test-Path $rconPy)) { $rconPy = Join-Path $scriptDir 'rcon.py' }
 
 function Write-Log {
     param([string]$Message, [string]$Level = 'INFO')

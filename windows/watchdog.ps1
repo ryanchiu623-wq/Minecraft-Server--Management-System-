@@ -20,9 +20,18 @@ $ErrorActionPreference = 'Stop'
 $scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
 if (-not $LogPath) { $LogPath = Join-Path $scriptDir 'watchdog.log' }
 
-$marker    = Join-Path $scriptDir 'server.running'
+# The marker, the lock and start.bat belong to the server directory.
+# start.bat writes server.running beside itself, so looking for it next to
+# this script only works when the toolkit was unpacked into the server folder.
+. (Join-Path $PSScriptRoot 'Get-ToolkitConfig.ps1')
+try { $toolkit = Get-ToolkitConfig } catch { $toolkit = $null }
+$serverDir = if ($toolkit) {
+    Get-ToolkitValue $toolkit 'serverDir' $scriptDir
+} else { $scriptDir }
+
+$marker    = Join-Path $serverDir 'server.running'
 $histFile  = Join-Path $scriptDir 'watchdog-restarts.txt'
-$startBat  = Join-Path $scriptDir 'start.bat'
+$startBat  = Join-Path $serverDir 'start.bat'
 $botTask   = 'Minecraft Discord Control Bot'
 
 function Write-Log {
@@ -45,7 +54,7 @@ function Test-ServerProcess {
 function Test-RestartInProgress {
     # restart-sequence.py holds this lock between stopping and starting. Time
     # limit so a restart script that died cannot mute the watchdog for good.
-    $lock = Join-Path $scriptDir 'restart.lock'
+    $lock = Join-Path $serverDir 'restart.lock'
     if (-not (Test-Path $lock)) { return $false }
     return (((Get-Date) - (Get-Item $lock).LastWriteTime).TotalMinutes -lt 10)
 }

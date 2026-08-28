@@ -30,8 +30,14 @@ if getattr(sys, "frozen", False):
     HERE = os.path.dirname(os.path.abspath(sys.executable))
 else:
     HERE = os.path.dirname(os.path.abspath(__file__))
+
+# Ahead of first use: settings is read at module level just below.
+sys.path.insert(0, HERE)
+import settings  # noqa: E402
+
 MAP_URL = settings.get("mapUrl", default="")
 BACKUP_DIR = settings.get("backupDir", default="")
+SERVER_DIR = settings.server_dir()
 
 def _load(name, filename):
     """Load a sibling script as a module. Reuses the tested probe and RCON
@@ -45,9 +51,6 @@ def _load(name, filename):
 
 probe = _load("mcprobe", "check-server.py")
 rconmod = _load("mcrcon", "rcon.py")
-
-sys.path.insert(0, HERE)
-import settings  # noqa: E402
 
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 

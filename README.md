@@ -262,6 +262,17 @@ python installer/build_exe.py
 
 ---
 
+## 致謝
+
+「用一支 PyInstaller 打包的圖形安裝程式完成整套安裝」這個做法，參考自
+[tntapple219/MinecraftServerManager](https://github.com/tntapple219/MinecraftServerManager)（MIT 授權）。
+
+本專案**沒有使用該專案的任何程式碼**——介面用的是標準函式庫的 tkinter，
+而不是它的 CustomTkinter，兩者的定位也不同：那是一個常駐的伺服器管理器，
+這裡的安裝程式跑完一次就結束，之後管理走網頁控制台。
+
+---
+
 ## 授權
 
 MIT

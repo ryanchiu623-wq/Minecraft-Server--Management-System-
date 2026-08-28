@@ -134,7 +134,7 @@ python scripts/check-server.py
 | 元件 | 位置 | 做什麼 |
 |---|---|---|
 | **安裝程式** | `installer/` | 上面那八件事，圖形介面 |
-| **內網控制台** | `scripts/web-console.py` | 瀏覽器管理頁：狀態磚、啟停、備份、RCON、日誌。只接受內網連線 |
+| **內網控制台** | `scripts/web-console.py` | 瀏覽器管理頁：狀態磚、啟停、備份、RCON、日誌、遊戲規則、記憶體配置。只接受內網連線 |
 | **健康檢查** | `scripts/check-server.py` | 六層檢查：本機 → DNS → 隧道 → 外部視角 → 網頁地圖 |
 | **Discord 機器人** | `scripts/discord-control.py` | `/status` `/start` `/stop` `/rcon` `/ip` `/render` |
 | **桌面控制台** | `scripts/console-gui.py` | tkinter 圖形介面，功能同網頁版 |

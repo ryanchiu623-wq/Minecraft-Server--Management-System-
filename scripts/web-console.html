@@ -131,6 +131,33 @@
   }
   pre:empty { display: none; }
 
+
+  /* rules + memory */
+  .rules { display: grid; gap: 1px; background: var(--rule-soft);
+           grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+           border: 1px solid var(--rule-soft); border-radius: 4px; overflow: hidden; }
+  .rule { display: flex; align-items: center; justify-content: space-between;
+          gap: 14px; padding: 11px 14px; background: var(--panel); }
+  .rule span { font-size: 14.5px; }
+  .rule .nm { font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-3);
+              display: block; letter-spacing: .04em; }
+  .sw { position: relative; width: 42px; height: 23px; flex: 0 0 auto; }
+  .sw input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .sw i { position: absolute; inset: 0; border-radius: 999px; background: var(--sunk);
+          border: 1px solid var(--rule); transition: background .15s, border-color .15s; }
+  .sw i::after { content: ""; position: absolute; top: 2px; left: 2px;
+                 width: 17px; height: 17px; border-radius: 50%;
+                 background: var(--ink-3); transition: transform .15s, background .15s; }
+  .sw input:checked + i { background: color-mix(in srgb, var(--accent) 22%, transparent);
+                          border-color: var(--accent); }
+  .sw input:checked + i::after { transform: translateX(19px); background: var(--accent); }
+  .sw input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sw input:disabled { cursor: wait; }
+  .num-in { width: 84px; font-family: var(--f-mono); font-size: 13.5px;
+            padding: 6px 9px; border-radius: 3px; color: var(--ink);
+            background: var(--sunk); border: 1px solid var(--rule); }
+  .mem { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; }
+  .mem label { font-size: 13px; color: var(--ink-3); display: block; margin-bottom: 4px; }
   .hint { font-size: 12.5px; color: var(--ink-3); margin: 9px 0 0; }
   .grid2 { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
   footer { font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 14px; }
@@ -175,6 +202,25 @@
       <button data-act="playit">重啟 playit</button>
     </div>
     <pre id="actout"></pre>
+  </div>
+
+  <div class="card">
+    <h2>遊戲規則 <span style="float:right;text-transform:none;letter-spacing:0;font-size:12px">改動立即生效</span></h2>
+    <div class="rules" id="rules"><span style="padding:14px;color:var(--ink-3)">讀取中…</span></div>
+    <p class="hint">只列出這台伺服器認得的規則。日夜循環與天氣不在其中——這個版本沒有把它們做成遊戲規則。</p>
+    <pre id="ruleout"></pre>
+  </div>
+
+  <div class="card">
+    <h2>記憶體配置</h2>
+    <div class="mem">
+      <div><label for="memmin">最小 (-Xms)</label><input class="num-in" id="memmin" placeholder="1G"></div>
+      <div><label for="memmax">最大 (-Xmx)</label><input class="num-in" id="memmax" placeholder="4G"></div>
+      <button id="memsave">寫入</button>
+      <span class="hint" id="memnote" style="margin:0 0 8px"></span>
+    </div>
+    <p class="hint">寫進 <code>start.bat</code>，<b>下次啟動伺服器才會生效</b>。原檔會備份成 <code>.bak</code>。</p>
+    <pre id="memout"></pre>
   </div>
 
   <div class="card">
@@ -333,6 +379,74 @@ $("rconform").onsubmit = (e) => {
   const c = $("cmd").value.trim();
   if (c) post("/api/rcon", { command: c }, $("rconout")).then(() => ($("cmd").value = ""));
 };
+
+/* ---------- game rules ---------- */
+async function loadRules() {
+  try {
+    const r = await fetch("/api/gamerules", { cache: "no-store" });
+    const rules = (await r.json()).rules || [];
+    if (!rules.length) { $("rules").innerHTML =
+      '<span style="padding:14px;color:var(--ink-3)">讀不到規則（伺服器可能沒在跑）</span>'; return; }
+    $("rules").innerHTML = rules.map(g => {
+      const ctl = g.kind === "bool"
+        ? `<label class="sw"><input type="checkbox" data-rule="${g.name}"${g.value ? " checked" : ""}><i></i></label>`
+        : `<input class="num-in" type="number" data-rule="${g.name}" value="${g.value}">`;
+      return `<div class="rule"><span>${g.label}<span class="nm">${g.name}</span></span>${ctl}</div>`;
+    }).join("");
+    $("rules").querySelectorAll("[data-rule]").forEach(el => {
+      const send = () => setRule(el, el.type === "checkbox" ? el.checked : el.value);
+      el.addEventListener(el.type === "checkbox" ? "change" : "change", send);
+    });
+  } catch (e) {
+    $("rules").innerHTML = '<span style="padding:14px;color:var(--ink-3)">連不上控制台服務</span>';
+  }
+}
+
+async function setRule(el, value) {
+  if (!token()) { $("ruleout").textContent = "請先填入控制權杖。"; loadRules(); return; }
+  el.disabled = true;
+  try {
+    const r = await fetch("/api/gamerule", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: token(), rule: el.dataset.rule, value: String(value) }),
+    });
+    const j = await r.json();
+    $("ruleout").textContent = j.error || j.message || "";
+    // Re-read rather than trust the toggle: a refused change must not leave
+    // the switch showing a state the server never accepted.
+    if (j.error) loadRules();
+  } catch (e) {
+    $("ruleout").textContent = "請求失敗：" + e;
+    loadRules();
+  } finally { el.disabled = false; }
+}
+
+/* ---------- memory ---------- */
+async function loadMemory() {
+  try {
+    const m = await (await fetch("/api/memory", { cache: "no-store" })).json();
+    if (m.min) $("memmin").value = m.min;
+    if (m.max) $("memmax").value = m.max;
+    $("memnote").textContent = m.totalGb ? `這台共 ${m.totalGb} GB` : "";
+  } catch (e) {}
+}
+
+$("memsave").onclick = async () => {
+  if (!token()) { $("memout").textContent = "請先填入控制權杖。"; return; }
+  $("memout").textContent = "寫入中…";
+  try {
+    const r = await fetch("/api/memory", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: token(), min: $("memmin").value.trim(),
+                             max: $("memmax").value.trim() }),
+    });
+    const j = await r.json();
+    $("memout").textContent = j.error || j.message || "";
+    loadMemory();
+  } catch (e) { $("memout").textContent = "請求失敗：" + e; }
+};
+
+loadRules(); loadMemory();
 
 poll(); pollLog();
 setInterval(poll, 5000);

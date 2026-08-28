@@ -31,7 +31,9 @@ import argparse
 import ipaddress
 import json
 import os
+import re
 import secrets
+import shutil
 import socket
 import subprocess
 import sys
@@ -174,6 +176,176 @@ def parse_players(text):
                 "names": [n.strip() for n in names.split(",") if n.strip()]}
     except Exception:
         return None
+
+
+# --------------------------------------------------------------- game rules
+# Rule names are NOT the camelCase ones from the wiki on this server - it uses
+# snake_case, and several rules dropped their "do" prefix (doTileDrops is
+# block_drops, doMobSpawning is spawn_mobs). Rather than trust a hard-coded
+# list, every candidate is asked once at startup and only the ones the server
+# actually answers are offered. That keeps this working across versions that
+# rename things again.
+RULE_LABELS = [
+    ("keep_inventory", "死亡不掉落"),
+    ("show_death_messages", "顯示死亡訊息"),
+    ("immediate_respawn", "死亡後立即重生"),
+    ("mob_griefing", "生物可破壞方塊"),
+    ("spawn_mobs", "生成生物"),
+    ("mob_drops", "生物掉落物"),
+    ("block_drops", "方塊掉落物"),
+    ("entity_drops", "實體掉落物"),
+    ("pvp", "玩家互相傷害"),
+    ("fall_damage", "墜落傷害"),
+    ("fire_damage", "火焰傷害"),
+    ("freeze_damage", "凍傷"),
+    ("drowning_damage", "溺水傷害"),
+    ("raids", "襲擊"),
+    ("universal_anger", "全體激怒"),
+    ("forgive_dead_players", "原諒死亡玩家"),
+    ("ender_pearls_vanish_on_death", "死亡時終界珍珠消失"),
+    ("projectiles_can_break_blocks", "投射物可破壞方塊"),
+    ("limited_crafting", "限制合成（需先解鎖配方）"),
+    ("command_block_output", "指令方塊輸出到聊天"),
+    ("send_command_feedback", "指令回饋"),
+    ("log_admin_commands", "記錄管理員指令"),
+    ("reduced_debug_info", "精簡除錯資訊"),
+    ("spectators_generate_chunks", "旁觀者生成區塊"),
+    ("global_sound_events", "全域音效事件"),
+    ("water_source_conversion", "水源擴散"),
+    ("lava_source_conversion", "岩漿源擴散"),
+    ("block_explosion_drop_decay", "方塊爆炸掉落衰減"),
+    ("mob_explosion_drop_decay", "生物爆炸掉落衰減"),
+    ("tnt_explosion_drop_decay", "TNT 爆炸掉落衰減"),
+    ("elytra_movement_check", "鞘翅移動檢查"),
+    ("random_tick_speed", "隨機刻速度"),
+    ("max_entity_cramming", "實體擁擠上限"),
+    ("players_sleeping_percentage", "跳過夜晚所需睡覺比例 %"),
+]
+
+_RULE_CACHE = {"at": 0.0, "rules": None}
+
+
+def _parse_rule_reply(text):
+    m = re.search(r"is currently set to:\s*(\S+)", text or "")
+    return m.group(1) if m else None
+
+
+def game_rules(force=False):
+    """Current value of every rule this server recognises."""
+    now = time.time()
+    cached = _RULE_CACHE["rules"]
+    if cached is not None and not force and now - _RULE_CACHE["at"] < 20:
+        return cached
+
+    names = [n for n, _ in RULE_LABELS]
+    # RCON on an idle server drops connections often enough that a single
+    # attempt regularly comes back empty, and an empty list is indistinguishable
+    # from "this server has no rules". Retry before giving up, and keep serving
+    # the last good answer rather than blanking the panel.
+    for attempt in range(3):
+        ok, replies = rconmod.execute_each(["gamerule " + n for n in names])
+        if ok:
+            break
+        time.sleep(0.6)
+    else:
+        return cached or []
+
+    labels = dict(RULE_LABELS)
+    out = []
+    for name, reply in zip(names, replies):
+        value = _parse_rule_reply(reply)
+        if value is None:
+            continue          # this server does not know that rule
+        if value in ("true", "false"):
+            kind, parsed = "bool", value == "true"
+        else:
+            try:
+                kind, parsed = "int", int(value)
+            except ValueError:
+                kind, parsed = "text", value
+        out.append({"name": name, "label": labels[name],
+                    "kind": kind, "value": parsed})
+
+    _RULE_CACHE.update(at=now, rules=out)
+    return out
+
+
+# ------------------------------------------------------------------- memory
+RAM_PATTERN = re.compile(rb'(set "M(?:IN|AX)_RAM=)([0-9]+[GgMm])(")')
+
+
+def total_ram_gb():
+    ok, out = run(["powershell.exe", "-NoProfile", "-NonInteractive",
+                   "-Command",
+                   "[math]::Round((Get-CimInstance Win32_ComputerSystem)"
+                   ".TotalPhysicalMemory/1GB,1)"], timeout=60)
+    try:
+        return float(out.strip().splitlines()[0])
+    except (ValueError, IndexError):
+        return None
+
+
+def read_memory():
+    """Current -Xms/-Xmx as written in start.bat."""
+    try:
+        raw = open(START_BAT, "rb").read()
+    except OSError as exc:
+        return {"error": str(exc)}
+    found = {}
+    for m in re.finditer(rb'set "(M(?:IN|AX)_RAM)=([0-9]+[GgMm])"', raw):
+        found[m.group(1).decode()] = m.group(2).decode().upper()
+    return {"min": found.get("MIN_RAM"), "max": found.get("MAX_RAM"),
+            "totalGb": total_ram_gb(), "path": START_BAT}
+
+
+def _to_mb(value):
+    n = int(value[:-1])
+    return n * 1024 if value[-1] in "Gg" else n
+
+
+def write_memory(new_min, new_max):
+    """Rewrite the two RAM lines in start.bat, in place and byte-for-byte.
+
+    Edited as bytes on purpose: start.bat has to stay pure ASCII with CRLF
+    endings or cmd.exe mangles it, and a decode/encode round trip through a
+    text editor is exactly how that gets lost.
+    """
+    for v in (new_min, new_max):
+        if not re.fullmatch(r"[0-9]{1,5}[GgMm]", v or ""):
+            return False, "格式要像 2G 或 512M，收到：%s" % v
+
+    lo, hi = _to_mb(new_min), _to_mb(new_max)
+    if lo < 512:
+        return False, "最小值不能低於 512M"
+    if hi < lo:
+        return False, "最大值不能小於最小值"
+
+    total = total_ram_gb()
+    if total and hi > (total - 1) * 1024:
+        return False, ("最大值 %s 超過安全上限：這台有 %.1f GB，"
+                       "至少要留 1 GB 給系統" % (new_max, total))
+
+    try:
+        raw = open(START_BAT, "rb").read()
+    except OSError as exc:
+        return False, str(exc)
+
+    def repl(m):
+        key = m.group(1)
+        value = new_min if key == b"MIN_RAM" else new_max
+        return b'set "' + key + b"=" + value.upper().encode() + b'"'
+
+    patched, n = re.subn(rb'set "(M(?:IN|AX)_RAM)=[0-9]+[GgMm]"', repl, raw)
+    if n != 2:
+        return False, "在 start.bat 找不到那兩行設定（找到 %d 行）" % n
+    if not all(b < 128 for b in patched):
+        return False, "改完會產生非 ASCII 字元，已中止"
+
+    shutil.copy2(START_BAT, START_BAT + ".bak")
+    with open(START_BAT, "wb") as fh:
+        fh.write(patched)
+    return True, "已寫入 %s（原檔備份為 .bak）。下次啟動伺服器才會生效。" % (
+        os.path.basename(START_BAT))
 
 
 # --------------------------------------------------------------- state poll
@@ -369,6 +541,14 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, MONITOR.snapshot())
             return
 
+        if path == "/api/gamerules":
+            self._json(200, {"rules": game_rules()})
+            return
+
+        if path == "/api/memory":
+            self._json(200, read_memory())
+            return
+
         if path == "/api/log":
             try:
                 with open(LOG_PATH, encoding="utf-8", errors="replace") as fh:
@@ -398,6 +578,26 @@ class Handler(BaseHTTPRequestHandler):
             self._audit("rcon: " + command)
             ok, out = rconmod.execute([command])
             self._json(200, {"ok": ok, "output": out})
+            return
+
+        if path == "/api/gamerule":
+            rule = str(payload.get("rule", ""))
+            value = str(payload.get("value", ""))
+            if not any(rule == r["name"] for r in game_rules()):
+                self._json(400, {"error": "不認得的規則：%s" % rule})
+                return
+            self._audit("gamerule %s = %s" % (rule, value))
+            ok, out = rconmod.execute(["gamerule %s %s" % (rule, value)])
+            game_rules(force=True)
+            self._json(200, {"ok": ok, "message": out})
+            return
+
+        if path == "/api/memory":
+            self._audit("memory %s / %s" % (payload.get("min"),
+                                            payload.get("max")))
+            ok, msg = write_memory(str(payload.get("min", "")),
+                                   str(payload.get("max", "")))
+            self._json(200, {"ok": ok, "message": msg})
             return
 
         if path == "/api/action":

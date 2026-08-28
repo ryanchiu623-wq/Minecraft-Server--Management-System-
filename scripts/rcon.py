@@ -73,19 +73,24 @@ def read_packet(sock):
     return req_id, req_type, data[8:-2].decode('utf-8', 'replace')
 
 
-def execute(commands, props=None):
-    """Run commands and return (ok, text). Importable so the desktop console
-    can call this in-process - once frozen into an .exe, sys.executable is
-    the exe itself, so shelling out to "python rcon.py" no longer works."""
+def execute_each(commands, props=None):
+    """Run commands and return (ok, [reply, ...]) - one reply per command.
+
+    Callers that query a list of values need the replies kept apart. Joining
+    them cannot be undone: an error reply is itself two lines ("Incorrect
+    argument for command" plus the caret line), so splitting a joined string
+    pairs every later command with the wrong answer - quietly, and with
+    plausible-looking results.
+    """
     props = props or load_props()
     host = props.get('server-ip') or '127.0.0.1'
     port = int(props.get('rcon.port', 25575))
     password = props.get('rcon.password', '')
 
     if props.get('enable-rcon', 'false') != 'true':
-        return False, 'enable-rcon is not true in server.properties'
+        return False, ['enable-rcon is not true in server.properties']
     if not password:
-        return False, 'rcon.password is empty'
+        return False, ['rcon.password is empty']
 
     out = []
     try:
@@ -93,7 +98,7 @@ def execute(commands, props=None):
             sock.sendall(pack(1, 3, password))
             req_id, _, _ = read_packet(sock)
             if req_id == -1:
-                return False, 'RCON 認證失敗（密碼不符）'
+                return False, ['RCON 認證失敗（密碼不符）']
 
             SENTINEL = 9999
             for i, cmd in enumerate(commands, start=2):
@@ -107,9 +112,19 @@ def execute(commands, props=None):
                     chunks.append(body)
                 out.append(strip_colors(''.join(chunks)).strip())
     except Exception as exc:
-        return False, f'{type(exc).__name__}: {exc}'
+        return False, ['{0}: {1}'.format(type(exc).__name__, exc)]
 
-    return True, chr(10).join(out)
+    return True, out
+
+
+def execute(commands, props=None):
+    """Run commands and return (ok, text). Importable so the desktop console
+    can call this in-process - once frozen into an .exe, sys.executable is
+    the exe itself, so shelling out to "python rcon.py" no longer works."""
+    ok, replies = execute_each(commands, props)
+    if not ok:
+        return False, replies[0] if replies else ''
+    return True, chr(10).join(replies)
 
 
 def main():

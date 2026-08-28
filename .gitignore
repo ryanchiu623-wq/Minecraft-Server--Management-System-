@@ -53,3 +53,6 @@ desktop.ini
 
 # Stamped at build time from the current commit, not source.
 installer/build_info.json
+
+# Built by installer/build_console.py, published as a release asset.
+MC-Console.exe

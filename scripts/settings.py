@@ -18,6 +18,7 @@ excludes it anyway, since it still carries your addresses).
 
 import json
 import os
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -59,11 +60,20 @@ def config_path():
     env = os.environ.get("MC_TOOLKIT_CONFIG")
     if env:
         return env
-    for candidate in (os.path.join(HERE, "config.json"),
-                      os.path.join(os.path.dirname(HERE), "config.json")):
+
+    roots = [HERE, os.path.dirname(HERE)]
+    if getattr(sys, "frozen", False):
+        # Inside a PyInstaller build __file__ points at a temp extraction
+        # folder, so HERE says nothing about where the install actually is.
+        # The exe's own directory does.
+        exe_dir = os.path.dirname(os.path.abspath(sys.executable))
+        roots = [exe_dir, os.path.dirname(exe_dir)] + roots
+
+    for root in roots:
+        candidate = os.path.join(root, "config.json")
         if os.path.exists(candidate):
             return candidate
-    return os.path.join(os.path.dirname(HERE), "config.json")
+    return os.path.join(roots[0], "config.json")
 
 
 def load():

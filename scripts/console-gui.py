@@ -28,6 +28,12 @@ from tkinter import messagebox, ttk
 # so resolve the folder from the exe in that case.
 if getattr(sys, "frozen", False):
     HERE = os.path.dirname(os.path.abspath(sys.executable))
+    # The exe may sit at the toolkit root with the scripts one level down;
+    # accept either layout rather than only the one it was built in.
+    if not os.path.exists(os.path.join(HERE, "check-server.py")):
+        nested = os.path.join(HERE, "scripts")
+        if os.path.exists(os.path.join(nested, "check-server.py")):
+            HERE = nested
 else:
     HERE = os.path.dirname(os.path.abspath(__file__))
 

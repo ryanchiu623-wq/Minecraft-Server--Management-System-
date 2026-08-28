@@ -1,5 +1,7 @@
 # bundled
 
+**繁體中文** · [English](README.en.md)
+
 Files the installer lays down on the server, shipped inside the .exe.
 
 ## PanelKey

@@ -1,5 +1,7 @@
 # 完整安裝流程
 
+**繁體中文** · [English](INSTALL.en.md)
+
 從一台什麼都沒有的 Windows 機器，到一個朋友連得進來、會自己備份、當機會自己爬起來的 Minecraft 伺服器。
 
 **這份用 playit 隧道對外開放**，不需要公網 IP、不用動路由器。如果你有公網 IP 而且想要直連（延遲較低），改看 [INSTALL-port-forwarding.md](INSTALL-port-forwarding.md)。兩份只需要看一份。

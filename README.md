@@ -1,5 +1,7 @@
 # Minecraft Server Management System
 
+**繁體中文** · [English](README.en.md)
+
 在家裡的 Windows 電腦上開 Minecraft 伺服器，並且讓它自己照顧自己。
 
 一支安裝程式把伺服器、外掛、管理工具、排程全部裝好；之後用瀏覽器或 Discord 管理，不用再回到電腦前面。

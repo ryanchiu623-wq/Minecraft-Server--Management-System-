@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Minecraft Server Management System</title>
-<meta name="description" content="在家用 Windows 電腦上自架 Minecraft 伺服器的管理工具：內網控制台、Discord 遙控、自動備份、看門狗、排程重啟。">
+<meta name="description" content="Tools for self-hosting a Minecraft server on a home Windows PC: LAN console, Discord control, automated backups, watchdog, scheduled restarts.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
@@ -283,18 +283,19 @@
 <body>
 
 <header>
-  <div class="lang"><span>繁體中文</span><b>·</b><a href="index.en.html">English</a></div>
+  <div class="lang"><a href="index.html">繁體中文</a><b>·</b><span>English</span></div>
   <div class="wrap">
     <p class="eyebrow"><i></i>Minecraft Server Management System</p>
-    <h1>在自己的電腦上開伺服器，<br>然後<span>讓它自己撐著</span>。</h1>
+    <h1>Run a server on your own PC,<br>then <span>let it hold itself up</span>.</h1>
     <p class="lede">
-      一套裝在家用 Windows 機器上的管理工具。<strong>開伺服器不難，難的是它要一直開著</strong>——
-      當掉要有人拉起來、世界要有人備份、朋友連不進來要查得出是哪一層壞了。這些是它處理的事。
+      A set of tools for a Windows machine at home. <strong>Starting a server is easy; keeping
+      one running is not</strong> — something has to restart it when it dies, back the world up,
+      and tell you which layer broke when a friend cannot get in. That is the part this handles.
     </p>
     <div class="actions">
-      <a class="btn primary" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/releases/latest">下載安裝程式</a>
-      <a class="btn" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-">原始碼</a>
-      <span class="meta">Windows&nbsp;·&nbsp;MIT&nbsp;·&nbsp;約 12&nbsp;MB</span>
+      <a class="btn primary" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/releases/latest">Download installer</a>
+      <a class="btn" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-">Source</a>
+      <span class="meta">Windows&nbsp;·&nbsp;MIT&nbsp;·&nbsp;about 12&nbsp;MB</span>
     </div>
   </div>
 </header>
@@ -302,43 +303,45 @@
 <div class="band">
   <div class="wrap">
     <h2>Console</h2>
-    <p class="h2sub">在沙發上就能看它現在怎麼樣</p>
+    <p class="h2sub">Check on it from the sofa</p>
     <div class="console">
       <div class="console-bar">
         <span>mc.example.org</span>
-        <span class="pill"><i></i>伺服器上線</span>
+        <span class="pill"><i></i>Server up</span>
       </div>
       <div class="tiles">
-        <div class="tile ok"><span class="k">Java</span><span class="v">線上</span><span class="n">Paper 26.2</span></div>
-        <div class="tile ok"><span class="k">玩家</span><span class="v">3/20</span><span class="n">線上中</span></div>
+        <div class="tile ok"><span class="k">Java</span><span class="v">Online</span><span class="n">Paper 26.2</span></div>
+        <div class="tile ok"><span class="k">Players</span><span class="v">3/20</span><span class="n">connected</span></div>
         <div class="tile ok"><span class="k">TPS</span><span class="v">20.0</span><span class="n">5m 20.0　15m 19.9</span></div>
-        <div class="tile"><span class="k">記憶體</span><span class="v">544 MB</span><span class="n">配置 1024 MB</span><div class="meter"><i></i></div></div>
-        <div class="tile ok"><span class="k">隧道</span><span class="v">正常</span><span class="n">外部連得進來</span></div>
-        <div class="tile warn"><span class="k">最近備份</span><span class="v">8.7 小時</span><span class="n">保留 7 份</span></div>
+        <div class="tile"><span class="k">Heap</span><span class="v">544 MB</span><span class="n">1024 MB committed</span><div class="meter"><i></i></div></div>
+        <div class="tile ok"><span class="k">Tunnel</span><span class="v">Up</span><span class="n">reachable from outside</span></div>
+        <div class="tile warn"><span class="k">Last backup</span><span class="v">8.7 h</span><span class="n">7 kept</span></div>
       </div>
       <div class="console-log">[22:14:09] [Server thread/INFO]: Done (6.412s)! For help, type "help"
-[22:31:55] [Server thread/INFO]: <b>[Rcon] 伺服器將在 5 分鐘後重啟（定期重啟以釋放記憶體）</b>
+[22:31:55] [Server thread/INFO]: <b>[Rcon] Restarting in 5 minutes (scheduled restart to free memory)</b>
 [22:36:55] [Server thread/INFO]: Stopping the server
 [22:37:38] [Server thread/INFO]: Done (5.907s)! For help, type "help"</div>
     </div>
-    <p class="caption">瀏覽器開的管理頁，只接受內網連線。手機、平板、另一台電腦都能開。</p>
+    <p class="caption">A browser admin page that accepts LAN connections only. Phone, tablet, another PC.</p>
   </div>
 </div>
 
 <section>
   <div class="wrap">
     <h2>Diagnostics</h2>
-    <p class="h2sub">壞了的時候，先知道是哪一層壞</p>
+    <p class="h2sub">When it breaks, know which layer broke</p>
     <div class="layers">
-      <div class="layer"><span class="idx">01</span><span class="name">本機服務<em>伺服器程序本身活著嗎</em></span><span class="badge ok">正常</span></div>
-      <div class="layer"><span class="idx">02</span><span class="name">DNS<em>網域指到正確的地方嗎</em></span><span class="badge ok">正常</span></div>
-      <div class="layer bad cause"><span class="idx">03</span><span class="name">隧道<em>從這台打得到公開位址嗎</em></span><span class="badge bad">失敗</span></div>
-      <div class="layer bad"><span class="idx">04</span><span class="name">外部視角<em>別人連得進來嗎</em></span><span class="badge bad">失敗</span></div>
-      <div class="layer"><span class="idx">05</span><span class="name">網頁地圖<em>地圖站台回應嗎</em></span><span class="badge ok">正常</span></div>
+      <div class="layer"><span class="idx">01</span><span class="name">Local service<em>is the server process alive</em></span><span class="badge ok">OK</span></div>
+      <div class="layer"><span class="idx">02</span><span class="name">DNS<em>does the domain point where it should</em></span><span class="badge ok">OK</span></div>
+      <div class="layer bad cause"><span class="idx">03</span><span class="name">Tunnel<em>can this machine reach the public address</em></span><span class="badge bad">FAIL</span></div>
+      <div class="layer bad"><span class="idx">04</span><span class="name">Outside view<em>can anyone else get in</em></span><span class="badge bad">FAIL</span></div>
+      <div class="layer"><span class="idx">05</span><span class="name">Web map<em>does the map site respond</em></span><span class="badge ok">OK</span></div>
     </div>
     <p class="layers-note">
-      六層由上往下排，因為<strong>下層的問題通常是上層造成的</strong>。上面這種狀況只有一個問題——隧道斷了——
-      「外部視角」跟著紅只是結果。從最上面的失敗項開始查，就不會把時間花在追第二個症狀上。
+      Six layers, top to bottom, because <strong>a failure below is usually caused by one above</strong>.
+      There is only one problem in the state shown here — the tunnel is down — and the outside-view
+      check going red with it is just the consequence. Start at the topmost failure and you never
+      spend time chasing the second symptom.
     </p>
   </div>
 </section>
@@ -346,37 +349,37 @@
 <section>
   <div class="wrap">
     <h2>What it does</h2>
-    <p class="h2sub">它做什麼</p>
+    <p class="h2sub">The six things it handles</p>
     <div class="grid">
       <div class="cell">
         <span class="num">01</span>
-        <h3>讓外面連得進來</h3>
-        <p>家用網路沒有固定 IP、開不了通訊埠。用 playit 隧道繞過，不必動路由器；有公網 IP 的話也可以直接轉埠。基岩版的朋友——手機、平板、主機——透過 Geyser 和 Floodgate 連進同一個伺服器，不需要 Java 帳號。</p>
+        <h3>Lets people in from outside</h3>
+        <p>A home connection has no static IP and cannot open a port. A playit tunnel gets around that without touching the router; with a public IP you can forward ports directly instead. Friends on Bedrock — phones, tablets, consoles — join the same server through Geyser and Floodgate, with no Java account.</p>
       </div>
       <div class="cell">
         <span class="num">02</span>
-        <h3>當掉了自己爬起來</h3>
-        <p>看門狗每五分鐘檢查一次，伺服器意外死掉就重新啟動，並且分得出「你按了關閉」和「它自己掛了」。連續失敗會停手並留下紀錄，而不是無限重啟一個壞掉的東西。</p>
+        <h3>Gets itself back up</h3>
+        <p>A watchdog checks every five minutes and restarts a server that died, and it can tell "you pressed stop" from "it fell over". Repeated failures stop the loop and leave a record, rather than restarting something broken forever.</p>
       </div>
       <div class="cell">
         <span class="num">03</span>
-        <h3>備份不會壞掉存檔</h3>
-        <p>先暫停自動存檔、把世界落盤、複製、壓縮，然後確認自動存檔真的恢復了——沒恢復就留下警告檔並通知。備份腳本讓存檔停在關閉狀態，是最容易發生又最難察覺的災難。</p>
+        <h3>Backs up without corrupting the world</h3>
+        <p>Pause auto-save, flush the world to disk, copy, compress — then confirm auto-save actually came back on, and leave a warning file and a notification if it did not. A backup script that leaves saving switched off is the easiest disaster to cause and the hardest to notice.</p>
       </div>
       <div class="cell">
         <span class="num">04</span>
-        <h3>重啟前會先講</h3>
-        <p>排程重啟在 5、3、1 分鐘各廣播一次，最後 30 秒開始倒數，存檔後才關。不會有人蓋到一半突然被踢下線。</p>
+        <h3>Warns before it restarts</h3>
+        <p>Scheduled restarts announce at five, three and one minutes, count down the last thirty seconds, and save before stopping. Nobody gets dropped mid-build.</p>
       </div>
       <div class="cell">
         <span class="num">05</span>
-        <h3>在外面也能管</h3>
-        <p>Discord 機器人可以查狀態、開關伺服器、下主控台指令，回覆只有你看得到。人不在電腦前也不用開遠端桌面。</p>
+        <h3>Manageable while you are out</h3>
+        <p>A Discord bot checks status, starts and stops the server and runs console commands, replying only to you. No remote desktop needed to reach the machine.</p>
       </div>
       <div class="cell">
         <span class="num">06</span>
-        <h3>一支程式裝完</h3>
-        <p>安裝程式會抓 Paper、下載外掛、開啟 RCON、寫設定、註冊排程工作、建立防火牆規則。每一項都能個別取消勾選。</p>
+        <h3>Installs in one program</h3>
+        <p>The installer fetches Paper, downloads plugins, turns RCON on, writes the config, registers the scheduled tasks and adds the firewall rule. Every step can be unchecked.</p>
       </div>
     </div>
   </div>
@@ -385,15 +388,15 @@
 <section>
   <div class="wrap">
     <h2>Requirements</h2>
-    <p class="h2sub">需要什麼</p>
+    <p class="h2sub">What you need</p>
     <div class="scroll">
       <table>
         <tbody>
-          <tr><td>作業系統</td><td>Windows 10 或 11</td></tr>
-          <tr><td>Java</td><td>21 以上（Paper 的要求）</td></tr>
-          <tr><td>記憶體</td><td>建議 8 GB 以上，伺服器本身配 4 GB 綽綽有餘</td></tr>
-          <tr><td>網路</td><td>一般家用寬頻即可。用 playit 的話不需要公網 IP</td></tr>
-          <tr><td>Python</td><td>3.10 以上，只有手動安裝需要——安裝程式已內含</td></tr>
+          <tr><td>Operating system</td><td>Windows 10 or 11</td></tr>
+          <tr><td>Java</td><td>21 or newer, which is what Paper requires</td></tr>
+          <tr><td>Memory</td><td>8 GB or more suggested; 4 GB for the server itself is plenty</td></tr>
+          <tr><td>Network</td><td>Ordinary home broadband. With playit, no public IP is needed</td></tr>
+          <tr><td>Python</td><td>3.10 or newer, only for a manual install — the installer bundles its own</td></tr>
         </tbody>
       </table>
     </div>
@@ -403,15 +406,15 @@
 <section>
   <div class="wrap">
     <h2>Limits</h2>
-    <p class="h2sub">它不做什麼</p>
+    <p class="h2sub">What it deliberately does not do</p>
     <p class="prose" style="color:var(--ink-2);margin-bottom:26px">
-      這是為了自己家裡那台電腦寫的，不是通用的伺服器管理平台。用之前知道這些比較好：
+      This was written for one machine at home, not as a general server platform. Worth knowing before you start:
     </p>
     <ul class="limits">
-      <li><b>只支援 Windows</b>腳本用了工作排程器、PowerShell 和 Windows 防火牆，沒有 Linux 或 macOS 版本。</li>
-      <li><b>一次管一台伺服器</b>沒有多實例、沒有多使用者、沒有權限分級。</li>
-      <li><b>控制台只在內網</b>它能執行任意主控台指令，所以刻意不對外開放。要在外面管理就用 Discord 機器人。</li>
-      <li><b>介面是繁體中文</b>程式碼註解和提交訊息是英文，但使用者看到的文字沒有英文版。</li>
+      <li><b>Windows only</b>The scripts use Task Scheduler, PowerShell and Windows Firewall. There is no Linux or macOS build.</li>
+      <li><b>One server at a time</b>No multiple instances, no multiple users, no permission tiers.</li>
+      <li><b>The console is LAN-only</b>It can run any console command, so it is deliberately not exposed. Use the Discord bot to manage the server from outside.</li>
+      <li><b>The interface is in Traditional Chinese</b>Code comments and commit history are in English, but the text users see has no English version.</li>
     </ul>
   </div>
 </section>
@@ -419,23 +422,23 @@
 <section>
   <div class="wrap">
     <h2>Docs</h2>
-    <p class="h2sub">文件</p>
+    <p class="h2sub">Documentation</p>
     <div class="docs">
-      <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/blob/main/docs/INSTALL.md">
-        <span class="doc-t">安裝流程（playit 隧道）</span>
-        <span class="doc-d">從零開始，不需要公網 IP。多數人看這份</span>
+      <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/blob/main/docs/INSTALL.en.md">
+        <span class="doc-t">Install guide (playit tunnel)</span>
+        <span class="doc-d">From nothing, no public IP required. Start here</span>
       </a>
-      <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/blob/main/docs/INSTALL-port-forwarding.md">
-        <span class="doc-t">安裝流程（路由器轉埠）</span>
-        <span class="doc-d">有公網 IP、想直連降低延遲時看這份</span>
+      <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/blob/main/docs/INSTALL-port-forwarding.en.md">
+        <span class="doc-t">Install guide (router port forwarding)</span>
+        <span class="doc-d">For a public IP and a direct connection</span>
       </a>
-      <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-#readme">
-        <span class="doc-t">專案說明</span>
-        <span class="doc-d">元件清單、設定、安全性，以及一節「踩過的坑」</span>
+      <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/blob/main/README.en.md">
+        <span class="doc-t">Project readme</span>
+        <span class="doc-d">Components, configuration, security, and a section on what cost me time</span>
       </a>
-      <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/blob/main/bundled/README.md">
-        <span class="doc-t">PanelKey 外掛</span>
-        <span class="doc-d">內建的遊戲內管理面板，含原始碼與建置方式</span>
+      <a class="doc" href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-/blob/main/bundled/README.en.md">
+        <span class="doc-t">PanelKey plugin</span>
+        <span class="doc-d">The bundled in-game admin panel, with source and build steps</span>
       </a>
     </div>
   </div>
@@ -444,12 +447,12 @@
 <section>
   <div class="wrap">
     <h2>Inspiration</h2>
-    <p class="h2sub">靈感來源</p>
+    <p class="h2sub">Where the idea came from</p>
     <div class="prose">
       <p>
-        安裝程式的構想來自
-        <a href="https://github.com/tntapple219/MinecraftServerManager">tntapple219/MinecraftServerManager</a>（MIT 授權）——
-        用一支 PyInstaller 打包的圖形程式把整套安裝跑完。
+        The installer's shape came from
+        <a href="https://github.com/tntapple219/MinecraftServerManager">tntapple219/MinecraftServerManager</a> (MIT) —
+        one PyInstaller-built graphical program that runs the whole setup.
       </p>
     </div>
   </div>
@@ -457,8 +460,8 @@
 
 <footer>
   <div class="wrap">
-    MIT 授權　·　<a href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-">GitHub</a>　·
-    這個頁面本身也在 repo 裡（<code>docs/index.html</code>）
+    MIT licence　·　<a href="https://github.com/ryanchiu623-wq/Minecraft-Server--Management-System-">GitHub</a>　·
+    This page lives in the repository too (<code>docs/index.en.html</code>)
   </div>
 </footer>
 

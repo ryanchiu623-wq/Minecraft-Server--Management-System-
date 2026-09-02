@@ -14,6 +14,8 @@ Config: discord-control.config.json next to this file.
 
 import asyncio
 import json
+import logging
+import logging.handlers
 import os
 import socket
 import struct
@@ -36,6 +38,10 @@ NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LOG_PATH = os.path.join(HERE, "discord-control.log")
+# discord.py's own log goes in its own file, on a rotating handler. It cannot
+# share LOG_PATH: the trimming in log() rewrites that file in place, which
+# would pull the floor out from under an open handler.
+GATEWAY_LOG_PATH = os.path.join(HERE, "discord-gateway.log")
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -298,7 +304,8 @@ def addresses_block():
 # there is no cost to reporting good news immediately.
 TUNNEL_FAIL_THRESHOLD = 2
 
-STATE = {"server": None, "tunnel": None, "sync_size": None, "tunnel_fails": 0}
+STATE = {"server": None, "tunnel": None, "sync_size": None, "tunnel_fails": 0,
+         "last_beat": 0.0, "last_latency": None, "latency_same": 0}
 LOG_CHANNEL = None
 
 
@@ -457,10 +464,58 @@ class Control(discord.Client):
 
     @tasks.loop(seconds=60)
     async def monitor_loop(self):
+        self.check_gateway()
         try:
             await monitor_tick()
         except Exception as exc:
             log(f"monitor error: {exc}")
+
+    def check_gateway(self):
+        """Notice a gateway that has died without the process noticing.
+
+        The failure this exists for: the websocket to Discord goes away, the
+        TCP socket stays ESTABLISHED, and discord.py never reconnects. From
+        in here everything looks fine - and because channel.send() is a plain
+        HTTP call, all the monitoring below keeps posting to Discord
+        perfectly. From the outside the bot is simply gone: slash commands
+        reach it over the gateway, so none of them arrive.
+
+        is_closed() and ws is None both stay false in that state, so they
+        cannot be the test. What does give it away is latency, which is the
+        gap between the last heartbeat and its ack: while the gateway lives
+        that value is rewritten about every 41s, so a tick that sees the
+        exact same float as the tick before it saw no ack for a minute.
+        Five in a row is five minutes of silence - long past a missed
+        heartbeat, and not something a healthy connection produces.
+        """
+        latency = self.latency
+        if self.is_closed() or self.ws is None:
+            dead, why = True, "socket closed"
+        elif latency == STATE["last_latency"]:
+            STATE["latency_same"] += 1
+            dead = STATE["latency_same"] >= 5
+            why = f"no heartbeat ack for {STATE['latency_same']} tick(s)"
+        else:
+            STATE["last_latency"] = latency
+            STATE["latency_same"] = 0
+            dead, why = False, ""
+
+        if dead:
+            # Exit rather than reconnect by hand: the scheduled task is
+            # already set to restart a failed run (3 attempts, 5 minutes
+            # apart), and that path has always been dead code because this
+            # process never ends. A non-zero exit finally connects it.
+            log(f"gateway looks dead ({why}) - exiting so the scheduled "
+                f"task restarts the bot")
+            os._exit(1)
+
+        now = time.time()
+        if now - STATE["last_beat"] >= 1800:
+            STATE["last_beat"] = now
+            # Silence in this log used to be ambiguous: a healthy bot with
+            # nothing to report reads exactly like a dead one. It cost hours
+            # of guessing once. A line every half hour settles it.
+            log("alive, gateway latency %.0f ms" % (latency * 1000))
 
     @monitor_loop.before_loop
     async def before_monitor(self):
@@ -659,4 +714,15 @@ async def ip_cmd(interaction: discord.Interaction):
 
 if __name__ == "__main__":
     log("starting Discord control bot")
-    bot.run(CFG["_token"], log_handler=None)
+    # log_handler=None used to disable discord.py's logging completely. Under
+    # pythonw.exe there is no stderr either, so everything the library had to
+    # say about the connection - reconnects, resumes, heartbeats it never got
+    # an ack for - went nowhere at all. A gateway could die and leave not one
+    # line anywhere. Give it a real file instead.
+    handler = logging.handlers.RotatingFileHandler(
+        GATEWAY_LOG_PATH, maxBytes=1_000_000, backupCount=2,
+        encoding="utf-8", errors="replace")
+    handler.setFormatter(logging.Formatter(
+        "%(asctime)s  %(levelname)-8s %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"))
+    bot.run(CFG["_token"], log_handler=handler, log_level=logging.INFO)

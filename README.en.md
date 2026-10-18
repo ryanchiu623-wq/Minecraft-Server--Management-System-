@@ -150,7 +150,7 @@ Everything except the Discord bot uses only the Python standard library.
 | | |
 |---|---|
 | OS | Windows 10 or 11 |
-| Java | 21 or newer |
+| Java | 25 or newer |
 | Python | 3.10 or newer — only for a manual install; the installer bundles its own |
 
 ---

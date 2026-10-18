@@ -28,7 +28,7 @@ Parts 1, 2 and 7 are required; skip the rest as you like. Every part ends with a
 | | Version | Notes |
 |---|---|---|
 | Windows | 10 / 11 | |
-| Java | 21 or newer | Paper 1.21+ requires it. Developed against 26.0.1 |
+| Java | 25 or newer | Paper 1.21+ requires it. Developed against 26.0.1 |
 | Python | 3.10 or newer | Developed against 3.14 |
 | Memory | 8 GB or more suggested | 4 GB for the server itself is plenty |
 

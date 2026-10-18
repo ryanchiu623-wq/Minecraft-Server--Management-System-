@@ -19,6 +19,7 @@ One installer sets up the server, its plugins and the automation around it. Afte
 | [Install guide (playit tunnel)](docs/INSTALL.en.md) | **Start here.** Full setup from nothing, no public IP required |
 | [Install guide (router port forwarding)](docs/INSTALL-port-forwarding.en.md) | For a public IP and a direct connection |
 | [PanelKey plugin](bundled/README.en.md) | The bundled in-game admin panel, with source and build steps |
+| [Server Operations Guide (Chinese version only)](bundled/SERVER-MANUAL.md) | Server operation and maintenance commands, plugin commands |
 
 Further down this page: [playit setup](#exposing-the-server-playit), [security](#security), [scheduled tasks](#scheduled-tasks), [things that cost me time](#things-that-cost-me-time).
 

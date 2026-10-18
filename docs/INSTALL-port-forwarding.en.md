@@ -27,7 +27,7 @@ Parts 1, 2 and 7 are required; skip the rest as you like. Every part ends with a
 | | Version | Notes |
 |---|---|---|
 | Windows | 10 / 11 | |
-| Java | 21 or newer | Paper 1.21+ requires it |
+| Java | 25 or newer | Paper 1.21+ requires it |
 | Python | 3.10 or newer | Not needed if you use the installer |
 | Network | **a public IP** | See section 3.0 |
 | Router | one you can log into | An ISP-supplied box usually counts; the password is often on a sticker |

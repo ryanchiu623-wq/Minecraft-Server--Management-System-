@@ -22,7 +22,7 @@
 | [安裝流程（playit 隧道）](docs/INSTALL.md) | **多數人看這份。** 從零開始的完整流程，不需要公網 IP |
 | [安裝流程（路由器轉埠）](docs/INSTALL-port-forwarding.md) | 你有公網 IP、想直連降低延遲時看這份 |
 | [PanelKey 外掛說明](bundled/README.md) | 內建外掛的指令、依賴、自行建置方式 |
-| [伺服器運營指南](bundled/SERVER-MANUAL.md)| 伺服器操作運營指令、插件指令 |
+| [伺服器運營指南(只有中文版)](bundled/SERVER-MANUAL.md)| 伺服器操作運營指令、插件指令 |
 本頁下面有 [playit 設定](#對外開放playit)、[安全性](#安全性)、[排程工作](#排程工作)、[踩過的坑](#踩過的坑)。
 
 ---

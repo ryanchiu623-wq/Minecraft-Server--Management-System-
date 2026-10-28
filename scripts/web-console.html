@@ -161,6 +161,74 @@
   .hint { font-size: 12.5px; color: var(--ink-3); margin: 9px 0 0; }
   .grid2 { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
   footer { font-size: 12px; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 14px; }
+  .countdown { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn);
+               border-radius: 4px; padding: 12px 16px; font-weight: 700; font-size: 15px; }
+  .countdown .t { font-family: var(--f-mono); font-size: 18px; margin-left: 8px; }
+
+  /* plugin panels */
+  .ptabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .ptab { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px;
+          font-weight: 600; padding: 6px 12px; }
+  .ptab .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+  .ptab .dot.on { background: var(--ok); }
+  .ptab .dot.off { background: var(--crit); }
+  .ptab[aria-selected="true"] { border-color: var(--accent); color: var(--accent);
+          background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
+  .phead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .phead h3 { margin: 0; font-size: 17px; }
+  .badge { font-family: var(--f-mono); font-size: 11.5px; padding: 2px 8px; border-radius: 999px;
+           border: 1px solid var(--rule); color: var(--ink-3); }
+  .badge.on { color: var(--ok); background: var(--ok-bg); border-color: transparent; }
+  .badge.off { color: var(--crit); background: var(--crit-bg); border-color: transparent; }
+  .pdesc { color: var(--ink-2); font-size: 14px; margin: 4px 0 16px; }
+  .psec { margin-top: 18px; }
+  .psec > h4 { font-size: 12.5px; font-weight: 700; color: var(--ink-3); margin: 0 0 8px;
+               letter-spacing: .04em; }
+  .acts { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .act { border: 1px solid var(--rule-soft); border-radius: 4px; padding: 11px 12px;
+         display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; background: var(--sunk); }
+  .act .t { flex: 1 0 100%; font-weight: 700; font-size: 14px; }
+  .act .t small { font-weight: 400; color: var(--ink-3); margin-left: 6px; }
+  .act label { display: flex; flex-direction: column; font-size: 12px; color: var(--ink-3); gap: 3px;
+               flex: 1 1 120px; min-width: 0; }
+  .act input, .act select, .pform input, .pform select {
+    font: inherit; font-family: var(--f-mono); font-size: 13px; padding: 7px 9px; border-radius: 3px;
+    color: var(--ink); background: var(--panel); border: 1px solid var(--rule); min-width: 0; width: 100%; }
+  .act button { padding: 7px 13px; font-size: 13.5px; }
+  .pform { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+  .pform label { display: flex; flex-direction: column; font-size: 12px; color: var(--ink-3); gap: 3px;
+                 flex: 1 1 110px; min-width: 0; }
+  table.pt { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.pt th { text-align: left; font-weight: 600; color: var(--ink-3); font-size: 12px;
+                border-bottom: 1px solid var(--rule); padding: 6px 8px; }
+  table.pt td { border-bottom: 1px solid var(--rule-soft); padding: 6px 8px; vertical-align: top; }
+  table.pt td.m { font-family: var(--f-mono); font-size: 12.5px; }
+  .tblwrap { overflow-x: auto; max-height: 420px; overflow-y: auto; }
+  .empty { color: var(--ink-3); font-size: 13.5px; padding: 6px 0; }
+  .chip { display: inline-block; font-family: var(--f-mono); font-size: 12px; padding: 1px 7px;
+          border-radius: 3px; background: var(--sunk); border: 1px solid var(--rule-soft); margin: 1px 3px 1px 0; }
+  .chip.no { color: var(--crit); }
+
+  /* inventory */
+  .invwrap { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+  .invwrap > div { min-width: 0; }
+  .invwrap > div:not(:first-child) { flex: 1 1 260px; max-width: 438px; }
+  /* Nine columns shrink with the screen so a phone never scrolls sideways. */
+  .slots { display: grid; grid-template-columns: repeat(9, minmax(0, 46px)); gap: 3px; }
+  .slots.eq { grid-template-columns: 46px; }
+  .slot { width: 100%; aspect-ratio: 1; border-radius: 3px; background: var(--sunk);
+          border: 1px solid var(--rule); position: relative; display: grid; place-items: center;
+          overflow: hidden; }
+  .slot.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .slot img { width: 70%; height: 70%; image-rendering: pixelated; object-fit: cover;
+              object-position: top; }
+  .slot .txt { font-size: 9.5px; line-height: 1.1; text-align: center; color: var(--ink-2);
+               padding: 2px; word-break: break-all; }
+  .slot .cnt { position: absolute; right: 3px; bottom: 1px; font-family: var(--f-mono);
+               font-size: 11.5px; font-weight: 700; color: var(--ink); text-shadow: 0 0 3px var(--panel); }
+  .slot.ench { box-shadow: inset 0 0 8px color-mix(in srgb, #a46bff 70%, transparent); }
+  .slot .lbl { position: absolute; top: 1px; left: 3px; font-size: 9px; color: var(--ink-3); }
+  .gap { height: 8px; }
 </style>
 </head>
 <body>
@@ -173,6 +241,8 @@
     </div>
     <span class="pill wait" id="pill"><span class="dot"></span><span id="pilltext">讀取中</span></span>
   </header>
+
+  <div class="countdown" id="countdown" hidden></div>
 
   <div class="tiles" id="tiles"></div>
 
@@ -196,12 +266,26 @@
     </div>
     <div class="btns">
       <button data-act="start">啟動伺服器</button>
+      <button data-act="restart">重啟伺服器</button>
       <button data-act="stop" class="danger">關閉伺服器</button>
+      <button data-act="cancel" id="cancelbtn" hidden>取消倒數</button>
       <button data-act="backup">立即備份</button>
       <button data-act="render">同步地圖</button>
       <button data-act="playit">重啟 playit</button>
     </div>
+    <p class="hint">重啟和關閉都會先在遊戲裡倒數 5 分鐘（規則承諾的）；沒人在線上就直接執行。倒數中可以取消。</p>
     <pre id="actout"></pre>
+  </div>
+
+  <div class="card">
+    <h2>外掛管理</h2>
+    <div class="ptabs" id="ptabs" role="tablist"><span class="empty">讀取中…</span></div>
+    <div id="ppanel"></div>
+    <datalist id="dl-players"></datalist>
+    <datalist id="dl-groups"></datalist>
+    <datalist id="dl-nodes"></datalist>
+    <datalist id="dl-flags"></datalist>
+    <datalist id="dl-regions"></datalist>
   </div>
 
   <div class="card">
@@ -268,6 +352,14 @@ function tile(cls, key, value, note, meter) {
 function render(s) {
   if (s.error) { $("stamp").textContent = "取數失敗：" + s.error; return; }
 
+  const cd = s.countdown;
+  $("countdown").hidden = !cd;
+  $("cancelbtn").hidden = !cd;
+  if (cd) {
+    const m = Math.floor(cd.seconds_left / 60), sec = String(cd.seconds_left % 60).padStart(2, "0");
+    $("countdown").innerHTML = `${cd.mode === "stop" ? "關閉" : "重啟"}倒數中，遊戲裡正在廣播<span class="t">${m}:${sec}</span>`;
+  }
+
   const up = s.java && s.java.ok;
   const pill = $("pill");
   pill.className = "pill " + (up ? "up" : "down");
@@ -294,21 +386,23 @@ function render(s) {
     heap.used == null ? "—" : heap.used + " MB",
     heap.committed ? "配置 " + heap.committed + " MB" : "", pct));
 
-  tiles.push(tile(s.playit ? (s.tunnel && s.tunnel.ok ? "ok" : "warn") : "crit",
-    "隧道", s.playit ? (s.tunnel && s.tunnel.ok ? "正常" : "無回應") : "未執行",
+  tiles.push(tile(s.tunnel_service ? (s.tunnel && s.tunnel.ok ? "ok" : "warn") : "crit",
+    "隧道", s.tunnel_service ? (s.tunnel && s.tunnel.ok ? "正常" : "無回應") : "未執行",
     s.tunnel ? s.tunnel.detail : ""));
 
   const out = s.outside;
   tiles.push(tile(out === true ? "ok" : out === false ? "crit" : "",
     "外部視角", out === true ? "連得進來" : out === false ? "看不到" : "未確認",
-    "第三方檢測"));
+    s.outside_detail || "第三方檢測"));
 
   $("tiles").innerHTML = tiles.join("");
 
   const a = s.addresses || {};
+  const javaNote = a.java_via === "cloudflared" ? "（玩家要先開 cloudflared access）" : "（直接輸入，不用連接埠）";
+  const beNote = a.bedrock_via === "warden" ? "（26.40 以上；26.60 前連接埠填 443）" : `　埠 ${a.bedrock_port || "—"}`;
   $("addr").innerHTML = `
-    <div class="row"><span class="lbl">Java 版</span><span class="val">${a.java || "—"}</span></div>
-    <div class="row"><span class="lbl">基岩版</span><span class="val">${a.bedrock || "—"}　埠 ${a.bedrock_port || "—"}</span></div>
+    <div class="row"><span class="lbl">Java 版</span><span class="val">${a.java || "—"}${javaNote}</span></div>
+    <div class="row"><span class="lbl">基岩版</span><span class="val">${a.bedrock || "—"}${beNote}</span></div>
     <div class="row"><span class="lbl">網頁地圖</span><a href="${a.map || "#"}" target="_blank" rel="noopener">${a.map || "—"}</a></div>
     <div class="row"><span class="lbl">基岩本機</span><span class="val">${s.bedrock && s.bedrock.ok ? "正常" : "無回應"}</span></div>`;
 
@@ -317,7 +411,7 @@ function render(s) {
     <div class="row"><span class="lbl">最近備份</span><span class="val">${b ? b.age_h + " 小時前　" + b.mb + " MB" : "沒有備份"}</span></div>
     <div class="row"><span class="lbl">備份份數</span><span class="val">${b ? b.count : "—"}</span></div>
     <div class="row"><span class="lbl">地圖同步</span><span class="val">${s.sync_h == null ? "—" : s.sync_h + " 小時前"}</span></div>
-    <div class="row"><span class="lbl">playit</span><span class="val">${s.playit ? "執行中" : "已停止"}</span></div>`;
+    ${(s.services || []).map(v => `<div class="row"><span class="lbl">${v.name}</span><span class="val">${v.running ? "執行中" : "已停止"}</span></div>`).join("")}`;
 }
 
 /* ---------- polling ---------- */
@@ -369,7 +463,8 @@ async function post(url, payload, outEl) {
 document.querySelectorAll("button[data-act]").forEach(btn => {
   btn.onclick = () => {
     const act = btn.dataset.act;
-    if (act === "stop" && !confirm("確定要關閉伺服器？線上玩家都會被斷線。")) return;
+    if (act === "stop" && !confirm("確定要關閉伺服器？會先在遊戲裡倒數 5 分鐘再關。")) return;
+    if (act === "restart" && !confirm("確定要重啟伺服器？會先在遊戲裡倒數 5 分鐘。")) return;
     post("/api/action", { action: act }, $("actout"));
   };
 });
@@ -446,7 +541,287 @@ $("memsave").onclick = async () => {
   } catch (e) { $("memout").textContent = "請求失敗：" + e; }
 };
 
-loadRules(); loadMemory();
+/* ---------- plugin panels ---------- */
+const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const PLUGIN_KEY = "mc-console-plugin";
+let CAT = null, CUR = null;
+
+async function api(url, payload) {
+  const r = await fetch(url, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(Object.assign({ token: token() }, payload)),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+  return j;
+}
+
+function fillList(id, values) {
+  $(id).innerHTML = (values || []).map(v => `<option value="${esc(v)}">`).join("");
+}
+
+async function loadPlugins() {
+  try {
+    CAT = await (await fetch("/api/plugins", { cache: "no-store" })).json();
+  } catch (e) {
+    $("ptabs").innerHTML = '<span class="empty">連不上控制台服務</span>'; return;
+  }
+  fillList("dl-players", CAT.players);
+  fillList("dl-nodes", CAT.suggest.nodes);
+  fillList("dl-flags", CAT.suggest.flags);
+  let want = null;
+  try { want = localStorage.getItem(PLUGIN_KEY); } catch (e) {}
+  if (!CAT.plugins.some(p => p.key === want)) want = CAT.plugins[0].key;
+  $("ptabs").innerHTML = CAT.plugins.map(p => {
+    const dot = !p.known ? "" : p.enabled ? "on" : "off";
+    return `<button class="ptab" role="tab" data-key="${p.key}" aria-selected="false">
+      <span class="dot ${dot}"></span>${esc(p.title.split(" ")[0])}</button>`;
+  }).join("");
+  $("ptabs").querySelectorAll(".ptab").forEach(b => b.onclick = () => selectPlugin(b.dataset.key));
+  selectPlugin(want);
+}
+
+function selectPlugin(key) {
+  CUR = CAT.plugins.find(p => p.key === key);
+  try { localStorage.setItem(PLUGIN_KEY, key); } catch (e) {}
+  $("ptabs").querySelectorAll(".ptab").forEach(b =>
+    b.setAttribute("aria-selected", b.dataset.key === key ? "true" : "false"));
+  const p = CUR;
+  const state = !p.known ? '<span class="badge">伺服器離線</span>'
+    : p.enabled ? '<span class="badge on">已啟用</span>' : '<span class="badge off">未啟用</span>';
+  $("ppanel").innerHTML = `
+    <div class="phead"><h3>${esc(p.title)}</h3>${state}
+      <span class="badge">${esc(p.version || "版本不明")}</span></div>
+    <p class="pdesc">${esc(p.desc)}</p>
+    ${p.panel ? `<div class="psec" id="pdata"></div>` : ""}
+    ${p.actions.length ? `<div class="psec"><h4>操作</h4><div class="acts">${p.actions.map(actionHtml).join("")}</div></div>` : ""}
+    <pre id="pout"></pre>`;
+  $("ppanel").querySelectorAll("form.act").forEach(f => f.onsubmit = (e) => { e.preventDefault(); runAction(f); });
+  if (p.panel) renderPanelShell(p.panel);
+}
+
+function fieldHtml(f) {
+  if (f.kind === "choice") {
+    return `<label>${esc(f.label)}<select name="${f.name}">${f.options.map(o =>
+      `<option value="${esc(o[0])}">${esc(o[1])}</option>`).join("")}</select></label>`;
+  }
+  const list = f.kind === "player" ? "dl-players" : f.suggest ? "dl-" + f.suggest : "";
+  const type = f.kind === "int" ? "number" : "text";
+  return `<label>${esc(f.label)}<input type="${type}" name="${f.name}" autocomplete="off"
+    ${list ? `list="${list}"` : ""} ${f.default ? `value="${esc(f.default)}"` : ""}
+    ${f.min != null ? `min="${f.min}"` : ""} ${f.max != null && f.kind === "int" ? `max="${f.max}"` : ""}></label>`;
+}
+
+function actionHtml(a) {
+  return `<form class="act" data-act="${a.id}" data-danger="${a.danger ? 1 : 0}">
+    <span class="t">${esc(a.label)}${a.note ? `<small>${esc(a.note)}</small>` : ""}</span>
+    ${a.fields.map(fieldHtml).join("")}
+    <button type="submit" class="${a.danger ? "danger" : ""}">${a.fields.length ? "執行" : esc(a.label)}</button></form>`;
+}
+
+async function runAction(form) {
+  const out = $("pout");
+  if (!token()) { out.textContent = "請先在上方「控制」填入控制權杖。"; return; }
+  const a = CUR.actions.find(x => x.id === form.dataset.act);
+  if (form.dataset.danger === "1" && !confirm(`確定要「${a.label}」？`)) return;
+  const args = {};
+  form.querySelectorAll("input,select").forEach(el => args[el.name] = el.value);
+  const btn = form.querySelector("button");
+  btn.disabled = true;
+  out.textContent = a.async ? "已送出，等待外掛處理…" : "執行中…";
+  try {
+    const j = await api("/api/plugin/run", { plugin: CUR.key, action: a.id, args });
+    out.textContent = "> " + j.commands.join("\n> ") + "\n\n" + j.output;
+    if (j.refresh && CUR.panel && CUR.panel !== "inventory" && CUR.panel !== "stellarprotect") loadPanelData();
+  } catch (e) {
+    out.textContent = e.message;
+  } finally { btn.disabled = false; }
+}
+
+/* each data panel: a shell with its own controls, then loadPanelData() fills #pbody */
+function renderPanelShell(panel) {
+  const el = $("pdata");
+  if (panel === "inventory") {
+    el.innerHTML = `<h4>查看背包</h4>
+      <form class="pform" id="invform">
+        <label>玩家<input name="player" list="dl-players" autocomplete="off" value="${esc((CAT.players || [])[0] || "")}"></label>
+        <button type="submit">查看</button></form>
+      <div id="pbody" class="psec"></div>`;
+    $("invform").onsubmit = (e) => { e.preventDefault(); loadPanelData(); };
+  } else if (panel === "stellarprotect") {
+    el.innerHTML = `<h4>查詢紀錄</h4>
+      <form class="pform" id="spform">
+        <label>玩家（可空白）<input name="player" list="dl-players" autocomplete="off"></label>
+        <label>動作<select name="action"><option value="">全部</option></select></label>
+        <label>最近幾小時<input name="hours" type="number" min="1" value="24"></label>
+        <label>世界<select name="world"><option value="">全部</option>
+          <option>world</option><option>world_nether</option><option>world_the_end</option></select></label>
+        <label>X（可空白）<input name="x" type="number"></label>
+        <label>Y<input name="y" type="number"></label>
+        <label>Z<input name="z" type="number"></label>
+        <label>半徑<input name="radius" type="number" min="1" max="500" value="10"></label>
+        <button type="submit">查詢</button></form>
+      <p class="hint">要還原：站到現場後在遊戲裡輸入 <code>/spt restore t:24h r:10</code>（時間、半徑照上面改）。這個指令只能由玩家執行。</p>
+      <div id="pbody" class="psec"></div>`;
+    $("spform").onsubmit = (e) => { e.preventDefault(); loadPanelData(); };
+  } else {
+    el.innerHTML = `<h4>目前資料 <button type="button" id="prefresh" style="float:right;padding:3px 10px;font-size:12px">重新整理</button></h4>
+      <div id="pbody"></div>`;
+    $("prefresh").onclick = () => loadPanelData();
+  }
+  if (panel !== "inventory") loadPanelData();
+}
+
+async function loadPanelData() {
+  const panel = CUR.panel, body = $("pbody");
+  if (!body) return;
+  if (!token()) { body.innerHTML = '<p class="empty">這裡的資料涉及其他玩家，請先在上方「控制」填入控制權杖。</p>'; return; }
+  const args = {};
+  const form = $("invform") || $("spform");
+  if (form) form.querySelectorAll("input,select").forEach(el => args[el.name] = el.value);
+  body.innerHTML = '<p class="empty">讀取中…</p>';
+  try {
+    const d = await api("/api/plugin/data", { panel, args });
+    if (d.error) { body.innerHTML = `<p class="empty">${esc(d.error)}</p>`; return; }
+    (RENDER[panel] || ((x) => `<pre>${esc(JSON.stringify(x, null, 2))}</pre>`))(d, body);
+  } catch (e) {
+    body.innerHTML = `<p class="empty">${esc(e.message)}</p>`;
+  }
+}
+
+function table(head, rows) {
+  if (!rows.length) return '<p class="empty">沒有資料</p>';
+  return `<div class="tblwrap"><table class="pt"><thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map(r => `<tr>${r.map(c => `<td${c && c.m ? ' class="m"' : ""}>${c && c.html != null ? c.html : esc(c && c.v != null ? c.v : c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+const M = (v) => ({ v, m: true });
+const H = (html) => ({ html });
+
+function nodeChips(nodes) {
+  const perms = nodes.filter(n => !n.key.startsWith("group."));
+  return perms.length ? perms.map(n => `<span class="chip${n.value ? "" : " no"}">${n.value ? "" : "−"}${esc(n.key)}</span>`).join("") : '<span class="empty">—</span>';
+}
+
+function slotHtml(it, opts) {
+  opts = opts || {};
+  if (!it) return `<div class="slot${opts.sel ? " sel" : ""}">${opts.label ? `<span class="lbl">${esc(opts.label)}</span>` : ""}</div>`;
+  const tip = [it.custom ? `「${it.custom}」` : "", it.name, it.count > 1 ? "× " + it.count : "",
+    ...(it.enchants || []), it.damage ? "耐久損耗 " + it.damage : "", it.id].filter(Boolean).join("\n");
+  return `<div class="slot${opts.sel ? " sel" : ""}${(it.enchants || []).length ? " ench" : ""}" title="${esc(tip)}">
+    <img src="/api/icon?id=${encodeURIComponent(it.id)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'txt',textContent:${esc(JSON.stringify(it.name))}}))">
+    ${it.count > 1 ? `<span class="cnt">${it.count}</span>` : ""}</div>`;
+}
+
+const RENDER = {
+  inventory(d, body) {
+    const s = (i) => slotHtml(d.slots[String(i)], { sel: i === d.selected });
+    const main = [9, 18, 27].map(r => Array.from({ length: 9 }, (_, k) => s(r + k)).join("")).join("");
+    const hot = Array.from({ length: 9 }, (_, k) => s(k)).join("");
+    const eq = d.equipment.map(e => slotHtml(e.item, { label: e.label })).join("");
+    const ender = Array.from({ length: 27 }, (_, k) => slotHtml(d.ender[String(k)])).join("");
+    body.innerHTML = `
+      <div class="rows" style="margin-bottom:12px">
+        <div class="row"><span class="lbl">${esc(d.player)}</span><span class="val">${d.online ? "線上" : "離線"}　${esc(d.mode)}模式　生命 ${d.health}　飢餓 ${d.food}　等級 ${d.level}</span></div>
+        <div class="row"><span class="lbl">位置</span><span class="val">${esc(d.where)}</span></div>
+        <div class="row"><span class="lbl">資料時間</span><span class="val">${esc(d.saved)}${d.online ? "（剛剛存檔）" : "（最後一次存檔）"}</span></div>
+      </div>
+      <div class="invwrap">
+        <div><h4>裝備</h4><div class="slots eq">${eq}</div></div>
+        <div><h4>背包</h4><div class="slots">${main}</div><div class="gap"></div><div class="slots">${hot}</div></div>
+        <div><h4>終界箱</h4><div class="slots">${ender}</div></div>
+      </div>
+      <p class="hint">滑鼠移到物品上可看名稱、附魔和耐久。要直接拿取或放入物品，請在遊戲裡用 <code>/invsee ${esc(d.player)}</code>。</p>`;
+  },
+
+  stellarprotect(d, body) {
+    const sel = $("spform").querySelector("select[name=action]");
+    if (sel.options.length <= 1) sel.innerHTML += d.actions.map(a => `<option value="${a[0]}">${esc(a[1])}</option>`).join("");
+    body.innerHTML = `<p class="hint" style="margin-top:0">資料庫共 ${d.total} 筆紀錄，下面最多顯示 300 筆。</p>` +
+      table(["時間", "玩家", "動作", "對象", "數量", "世界", "座標", "已還原"],
+        d.rows.map(r => [M(r.time), r.player, r.action, r.target, M(r.amount), r.world, M(r.pos), r.restored ? "是" : ""]));
+  },
+
+  luckperms(d, body) {
+    fillList("dl-groups", d.groups.map(g => g.name));
+    const parents = (u) => [u.primary, ...u.nodes.filter(n => n.key.startsWith("group.") && n.value).map(n => n.key.slice(6))]
+      .filter((v, i, a) => a.indexOf(v) === i);
+    body.innerHTML = `<h4>群組</h4>` +
+      table(["群組", "權限"], d.groups.map(g => [M(g.name), H(nodeChips(g.nodes))])) +
+      `<h4 style="margin-top:14px">有個別設定的玩家</h4>` +
+      table(["玩家", "所屬群組", "個人權限"], d.users.map(u => [u.name, H(parents(u).map(g => `<span class="chip">${esc(g)}</span>`).join("")), H(nodeChips(u.nodes))])) +
+      `<p class="hint">沒列出的玩家都只在 default 群組、沒有個別權限。OP 不受這裡限制。</p>`;
+  },
+
+  worldguard(d, body) {
+    const all = [];
+    d.worlds.forEach(w => w.regions.forEach(r => all.push([M(w.world), M(r.id), r.type, M(r.priority),
+      H(Object.entries(r.flags).map(([k, v]) => `<span class="chip">${esc(k)}=${esc(typeof v === "object" ? JSON.stringify(v) : v)}</span>`).join("") || "—"),
+      r.owners.join("、") || "—", r.members.join("、") || "—"])));
+    fillList("dl-regions", ["__global__", ...new Set(all.map(r => r[1].v))]);
+    body.innerHTML = table(["世界", "區域", "形狀", "優先", "旗標", "擁有者", "成員"], all) +
+      (all.length ? "" : '<p class="hint">還沒有任何區域。在遊戲裡拿 //wand 選範圍，再打 /rg define 區域名稱 建立。</p>');
+  },
+
+  flashback(d, body) {
+    const rows = (kind, list) => list.map(f => [M(f.name), M(f.mb + " MB"), M(f.time),
+      H(`<button type="button" data-dl="${kind}" data-name="${esc(f.name)}" style="padding:3px 10px;font-size:12px">下載</button>`)]);
+    body.innerHTML = `<h4>完整錄影</h4>` + table(["檔名", "大小", "時間", ""], rows("replay", d.replays)) +
+      `<h4 style="margin-top:14px">精華片段</h4>` + table(["檔名", "大小", "時間", ""], rows("clip", d.clips)) +
+      `<p class="hint">下載後放進 Minecraft 的 <code>flashback/replays</code> 資料夾，用 Flashback 模組打開。</p>`;
+    body.querySelectorAll("button[data-dl]").forEach(b => b.onclick = () => download(b.dataset.dl, b.dataset.name, b));
+  },
+
+  spark(d, body) {
+    body.innerHTML = `<pre style="margin-top:0">${esc(d.tick || "伺服器沒在跑")}</pre><h4 style="margin-top:14px">最近的報告</h4>` +
+      table(["時間", "類型", "由誰", "結果"], d.activity.map(a => [M(a.time), a.type, a.by,
+        H(a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.url)}</a>` : esc(a.file || "—"))]));
+  },
+
+  whitelist(d, body) {
+    body.innerHTML = `<div class="rows" style="margin-bottom:10px"><div class="row"><span class="lbl">白名單</span>
+      <span class="val">${d.enabled == null ? "未知" : d.enabled ? "開啟中（只有名單上的人能進來）" : "關閉中（任何人都能進來）"}</span></div></div>` +
+      table(["玩家", "版本"], d.entries.map(e => [e.name, e.bedrock ? "基岩" : "Java"]));
+  },
+
+  geyser(d, body) {
+    body.innerHTML = `<div class="rows"><div class="row"><span class="lbl">基岩加入位址</span>
+      <span class="val">${esc(d.join || "（還沒向 Warden 登記）")}</span></div>
+      ${d.auto ? `<div class="row"><span class="lbl">Warden 自動位址</span><span class="val">${esc(d.auto)}（備用）</span></div>` : ""}
+      <div class="row"><span class="lbl">線上基岩玩家</span><span class="val">${esc(d.players || "—")}</span></div></div>
+      <pre>${esc(d.log.join("\n"))}</pre>`;
+  },
+
+  discord(d, body) {
+    body.innerHTML = `<div class="rows"><div class="row"><span class="lbl">聊天頻道</span><span class="val">${esc(d.channels)}</span></div>
+      <div class="row"><span class="lbl">主控台頻道</span><span class="val">${esc(d.console)}</span></div>
+      <div class="row"><span class="lbl">已連結帳號</span><span class="val">${d.linked} 個</span></div></div>
+      <pre>${esc(d.log.join("\n"))}</pre>`;
+  },
+
+  bluemap(d, body) {
+    body.innerHTML = `<pre style="margin-top:0">${esc(d.status || "伺服器沒在跑")}</pre>
+      ${d.url ? `<p style="margin:10px 0 0"><a href="${esc(d.url)}" target="_blank" rel="noopener">開啟網頁地圖 →</a></p>` : ""}`;
+  },
+};
+
+async function download(kind, name, btn) {
+  btn.disabled = true; btn.textContent = "下載中…";
+  try {
+    const r = await fetch("/api/plugin/download", { method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: token(), kind, name }) });
+    if (!r.ok) throw new Error((await r.json()).error || r.status);
+    const url = URL.createObjectURL(await r.blob());
+    const a = Object.assign(document.createElement("a"), { href: url, download: name.split("/").pop() });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    btn.textContent = "下載";
+  } catch (e) { btn.textContent = "失敗：" + e.message; }
+  finally { btn.disabled = false; }
+}
+
+loadRules(); loadMemory(); loadPlugins();
 
 poll(); pollLog();
 setInterval(poll, 5000);

@@ -1,0 +1,27 @@
+# RyanDrawers
+#
+# Drawers in the style of the Storage Drawers mod, for a Paper server: the
+# block is a barrel, and floating item/text displays on its front show what it
+# holds. Players need no mod and no resource pack.
+
+# Stacks each slot holds before upgrades - the mod's defaults. A stack is the
+# item's own stack size, so a single drawer holds 32 x 64 cobblestone but
+# only 32 x 16 ender pearls.
+base-stacks:
+  single: 32   # 1 slot
+  double: 16   # 2 slots, top and bottom
+  quad: 8      # 4 slots, 2 x 2
+
+# Capacity multiplier of each storage upgrade, tier 1 to 5 (obsidian, iron,
+# gold, diamond, emerald). Installed upgrades add up: obsidian + iron = x6.
+upgrade-multipliers: [2, 4, 8, 16, 32]
+
+# Upgrades one drawer can hold.
+max-upgrades: 7
+
+# false = drawers and upgrades only come from /drawers give.
+recipes: true
+
+# How far away the item icons and counts are drawn, as a fraction of 64
+# blocks (0.25 = 16 blocks). Lower is lighter on clients.
+view-range: 0.25

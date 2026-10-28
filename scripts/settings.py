@@ -30,6 +30,14 @@ DEFAULTS = {
     "java": {"host": "", "port": 25565, "localPort": 25565},
     "bedrock": {"host": "", "tunnelPort": 19132, "localPort": 19132},
     "mapUrl": "",
+    # How each public path reaches this machine:
+    #   java     "playit" (TCP tunnel + SRV record) or "cloudflared"
+    #            (Cloudflare Tunnel; players run cloudflared access)
+    #   bedrock  "warden" (Geyser NetherNet signaling) or "playit" (UDP/RakNet)
+    #   web      "cloudflared" (map served live through the tunnel) or
+    #            "pages" (static map pushed to Cloudflare Pages)
+    # Older configs with a single "type" are still read - see check-server.py.
+    "tunnel": {},
     "webConsole": {"host": "0.0.0.0", "port": 8099},
     "discord": {
         "tokenFile": "",
@@ -118,3 +126,19 @@ def get(*keys, default=None):
 
 def server_dir():
     return get("serverDir", default=os.path.dirname(HERE))
+
+
+def server_launch_command(start_bat):
+    """The command every launcher uses to start the server.
+
+    start.bat runs in a console that has no window (conhost --headless). It
+    used to run in a minimised "MC Server" window, and closing that window -
+    easy to do by mistake - killed java without saving the world (twice on
+    2026-10-25). With no window there is nothing to close by accident; stop
+    the server through RCON, the web console or the Discord bot as before.
+    cmd /c start still detaches it, so the launcher is not the server's parent.
+    """
+    conhost = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"),
+                           "System32", "conhost.exe")
+    return ["cmd.exe", "/c", "start", "", conhost, "--headless",
+            "cmd.exe", "/c", start_bat, "/nopause"]

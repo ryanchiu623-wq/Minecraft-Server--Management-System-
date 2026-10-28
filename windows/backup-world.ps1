@@ -19,7 +19,7 @@ param(
 . (Join-Path $PSScriptRoot 'Get-ToolkitConfig.ps1')
 $toolkit = Get-ToolkitConfig
 if (-not $Keep)       { $Keep = [int](Get-ToolkitValue $toolkit 'keepBackups' 7) }
-if (-not $BackupRoot) { $BackupRoot = Get-ToolkitValue $toolkit 'backupDir' 'C:\mc-backup' }
+if (-not $BackupRoot) { $BackupRoot = Get-ToolkitValue $toolkit 'backupDir' 'E:\mc-backup' }
 
 $ErrorActionPreference = 'Stop'
 
@@ -46,10 +46,20 @@ function Write-Log {
     } catch { }
 }
 
+# A process started from Explorer keeps the PATH Explorer had at logon, so
+# right after installing Python a plain "python" is not found from the
+# console's backup button. Fall back to the per-user install location.
+$python = (Get-Command python -ErrorAction SilentlyContinue).Source
+if (-not $python) {
+    $python = Get-ChildItem "$env:LOCALAPPDATA\Programs\Python\Python3*\python.exe" -ErrorAction SilentlyContinue |
+        Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+}
+if (-not $python) { $python = 'python' }
+
 function Invoke-Rcon {
     param([string[]]$Commands)
     try {
-        $out = & python $rconPy @Commands 2>&1
+        $out = & $python $rconPy @Commands 2>&1
         return @{ ok = ($LASTEXITCODE -eq 0); out = ($out -join "`n") }
     } catch {
         return @{ ok = $false; out = $_.Exception.Message }
@@ -113,7 +123,10 @@ try {
         } else {
             Write-Log 'AUTO-SAVE IS STILL OFF - run: python rcon.py "save-on"' 'ERROR'
             # Leave a marker the Discord bot reports, so this cannot go unnoticed.
-            Set-Content -Path (Join-Path $scriptDir 'SAVE-OFF-WARNING') -Value (Get-Date -Format s) -Encoding ASCII
+            # scripts\ is where discord-control.py looks for it.
+            $markerDir = Join-Path (Split-Path -Parent $scriptDir) 'scripts'
+            if (-not (Test-Path $markerDir)) { $markerDir = $scriptDir }
+            Set-Content -Path (Join-Path $markerDir 'SAVE-OFF-WARNING') -Value (Get-Date -Format s) -Encoding ASCII
         }
     }
 }
@@ -126,13 +139,50 @@ try {
     Remove-Item $staging -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-# Rotation: keep the newest $Keep archives.
+# A backup that cannot be restored is only found out on the day it is needed.
+# Open every chunk of the new zip now, while there is still a good older one.
+$scriptsDir = Split-Path -Parent $rconPy
+$verifyPy   = Join-Path $scriptsDir 'verify-backup.py'
+$verified   = $true
+if (Test-Path $verifyPy) {
+    $out = & $python $verifyPy $zipPath 2>&1
+    $verified = ($LASTEXITCODE -eq 0)
+    if ($verified) {
+        Write-Log "Verified: $(@($out)[-1])"
+    } else {
+        foreach ($line in @($out) | Select-Object -Last 8) { Write-Log "verify: $line" 'ERROR' }
+        Write-Log 'NEW BACKUP FAILED VERIFICATION - older backups are kept' 'ERROR'
+        $markerDir = Join-Path (Split-Path -Parent $scriptDir) 'scripts'
+        if (-not (Test-Path $markerDir)) { $markerDir = $scriptDir }
+        Set-Content -Path (Join-Path $markerDir 'BACKUP-WARNING') -Value $zipPath -Encoding UTF8
+    }
+}
+
+# Rotation: keep the newest $Keep archives - but only after a backup that
+# verified, so a broken one never pushes out the last good one.
 $all = Get-ChildItem $BackupRoot -Filter 'world-*.zip' | Sort-Object LastWriteTime -Descending
-if ($all.Count -gt $Keep) {
+if ($verified -and $all.Count -gt $Keep) {
     foreach ($old in $all | Select-Object -Skip $Keep) {
         Remove-Item $old.FullName -Force
         Write-Log "Removed old backup $($old.Name)"
     }
 }
+
+# Everything else a restore needs: settings, plugin data and jars, the
+# toolkit, tunnel credentials. A failure here must not fail the world backup.
+$configPy = Join-Path $scriptsDir 'backup-config.py'
+if (Test-Path $configPy) {
+    $out = & $python $configPy --dest $BackupRoot --keep $Keep 2>&1
+    $level = if ($LASTEXITCODE -eq 0) { 'INFO' } else { 'WARN' }
+    foreach ($line in @($out)) { Write-Log "config: $line" $level }
+}
+
+# A second copy on another physical disk (backupMirrorDir), only of a backup
+# that verified. It logs to this same file itself.
+$mirrorPs1 = Join-Path $scriptDir 'mirror-backup.ps1'
+if ($verified -and (Test-Path $mirrorPs1)) {
+    & $mirrorPs1 -WorldZip $zipPath -LogPath $LogPath | Out-Null
+}
+
 Write-Log "Done. $([math]::Min($all.Count, $Keep) ) backup(s) kept in $BackupRoot"
 exit 0

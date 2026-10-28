@@ -1,0 +1,15 @@
+name: RyanDrawers
+version: 1.0.0
+main: tw.ryanchiu.drawers.RyanDrawers
+api-version: '1.21'
+author: ryanchiu623
+description: Storage Drawers-style drawers built on barrels.
+commands:
+  drawers:
+    description: 抽屜管理指令（管理員）
+    usage: /drawers <give|place|info>
+    permission: drawers.admin
+permissions:
+  drawers.admin:
+    description: /drawers give、place、info
+    default: op

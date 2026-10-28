@@ -1,0 +1,13 @@
+name: RyanDrawersTest
+version: 1.0.0
+main: tw.ryanchiu.drawerstest.DrawersSelfTest
+api-version: '1.21'
+depend: [RyanDrawers]
+description: Test-server only. Drives RyanDrawers with a fake player and checks the results.
+commands:
+  drawerstest:
+    description: Run the RyanDrawers self-test (results go to the server log).
+    permission: drawerstest.run
+permissions:
+  drawerstest.run:
+    default: op

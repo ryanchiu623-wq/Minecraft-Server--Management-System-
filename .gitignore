@@ -6,6 +6,12 @@ config.json
 web-console.config.json
 *.log
 logs/
+scripts/cache/
+scripts/flashback-synced.json
+
+# The admin handbook and its printed versions stay private.
+bundled/*.pdf
+bundled/SERVER-MANUAL*.bak.md
 
 # Anything holding a credential. Keep tokens in files outside the repo and
 # point at them from config.json.

@@ -1,0 +1,119 @@
+# 玩家選單
+# 給一般玩家（沒有 OP）用的常用指令：回家、設家、回上一個位置、傳送請求、接受傳送、私訊、暫時離開、回出生點。
+# 開啟方式：/pmenu 或 /playermenu，或蹲下按 F（Shift+F，PanelKey 1.4.0 起沒有管理權限的人會開到這裡）
+# 權限：開選單不需要權限；每個按鈕實際執行的 EssentialsX 指令要有 essentials.<指令> 權限（LuckPerms default 群組已給）
+
+open_command:
+  - pmenu
+  - playermenu
+
+size: 27
+menu_title: '&8&l玩家選單'
+
+items:
+
+  # ---------- 中間一排：EssentialsX 常用指令 ----------
+  'home':
+    material: RED_BED
+    slot: 10
+    display_name: '&a&l回家'
+    lore:
+      - '&7傳送到你用「設定這裡為家」存的位置'
+      - '&8/home'
+    left_click_commands:
+      - '[close]'
+      - '[player] home'
+
+  'sethome':
+    material: OAK_SIGN
+    slot: 11
+    display_name: '&e&l設定這裡為家'
+    lore:
+      - '&7把你現在站的地方存成家'
+      - '&c會蓋掉原本的家'
+      - '&8/sethome'
+    left_click_commands:
+      - '[close]'
+      - '[player] sethome'
+
+  'back':
+    material: COMPASS
+    slot: 12
+    display_name: '&b&l回到上一個位置'
+    lore:
+      - '&7回到你上一次傳送之前站的地方'
+      - '&8/back'
+    left_click_commands:
+      - '[close]'
+      - '[player] back'
+
+  'tpa':
+    material: ENDER_PEARL
+    slot: 13
+    display_name: '&d&l傳送到朋友身邊'
+    lore:
+      - '&7列出線上玩家，點一下就送出傳送請求'
+      - '&7對方按「接受傳送」之後你才會過去'
+      - '&8/tpa 玩家'
+    left_click_commands:
+      - '[close]'
+      - '[player] tpamenu'
+
+  'tpaccept':
+    material: LIME_DYE
+    slot: 14
+    display_name: '&a&l接受傳送'
+    lore:
+      - '&7有人送傳送請求給你時，按這裡讓他過來'
+      - '&7請求過一陣子沒接受就會失效'
+      - '&8/tpaccept'
+    left_click_commands:
+      - '[close]'
+      - '[player] tpaccept'
+
+  'msg':
+    material: WRITABLE_BOOK
+    slot: 15
+    display_name: '&f&l私訊'
+    lore:
+      - '&7私訊要打字，按這裡會告訴你怎麼輸入'
+      - '&8/msg 玩家 內容　/r 內容'
+    left_click_commands:
+      - '[close]'
+      - '[message] &e私訊：在聊天輸入 &f/msg 玩家名稱 內容'
+      - '[message] &e回覆最後一個私訊你的人：&f/r 內容'
+
+  'afk':
+    material: CLOCK
+    slot: 16
+    display_name: '&7&l暫時離開（AFK）'
+    lore:
+      - '&7標記自己暫時離開，再按一次或動一下就取消'
+      - '&8/afk'
+    left_click_commands:
+      - '[close]'
+      - '[player] afk'
+
+  # ---------- 下面一排 ----------
+  'spawn':
+    material: GRASS_BLOCK
+    slot: 22
+    display_name: '&2&l回出生點'
+    lore:
+      - '&8/spawn'
+    left_click_commands:
+      - '[close]'
+      - '[player] spawn'
+
+  'close':
+    material: BARRIER
+    slot: 26
+    display_name: '&c&l關閉'
+    left_click_commands:
+      - '[close]'
+
+  # ---------- 外框 ----------
+  'filler':
+    material: GRAY_STAINED_GLASS_PANE
+    slots: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 17, 18, 19, 20, 21, 23, 24, 25]
+    display_name: ' '

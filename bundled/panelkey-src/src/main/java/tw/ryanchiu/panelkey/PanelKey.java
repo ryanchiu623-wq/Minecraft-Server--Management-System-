@@ -13,8 +13,9 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Opens the admin panel when a player presses the swap-hands key while
- * sneaking (Shift+F by default).
+ * Opens a menu when a player presses the swap-hands key while sneaking
+ * (Shift+F by default): the admin panel for players with the admin
+ * permission, the player menu for everyone else.
  *
  * A server cannot bind client keys. What it can do is watch for the few
  * vanilla actions the client reports back, and swapping hands is one of
@@ -30,12 +31,20 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class PanelKey extends JavaPlugin implements Listener {
 
     private String consoleCommand;
+    private String playerCommand;
     private String permission;
     private boolean requireSneak;
     private boolean debug;
+    private boolean guardStop;
+    private java.util.List<String> sequenceCommand;
+    private String gunPackUrl;
+    private String gunPackPermission;
+    private double gunPackDelay;
 
     private final TargetStore targets = new TargetStore();
     private TargetMenu targetMenu;
+    private TpaMenu tpaMenu;
+    private ServerControl serverControl;
 
     @Override
     public void onEnable() {
@@ -45,6 +54,24 @@ public final class PanelKey extends JavaPlugin implements Listener {
 
         targetMenu = new TargetMenu(this, targets);
         getServer().getPluginManager().registerEvents(targetMenu, this);
+
+        tpaMenu = new TpaMenu(playerCommand.isEmpty() ? "dm open player_menu %player%" : playerCommand);
+        getServer().getPluginManager().registerEvents(tpaMenu, this);
+
+        serverControl = new ServerControl(this, sequenceCommand,
+                getServer().getWorldContainer().getAbsoluteFile());
+
+        if (guardStop) {
+            getServer().getPluginManager().registerEvents(
+                    new StopGuard(this, serverControl, debug), this);
+            getLogger().info("In-game /stop and /restart now start the 5-minute countdown");
+        }
+
+        if (!gunPackUrl.isEmpty()) {
+            getServer().getPluginManager().registerEvents(
+                    new GunPack(this, gunPackUrl, gunPackPermission, gunPackDelay), this);
+            getLogger().info("Gun resource pack goes to players with " + gunPackPermission + " only");
+        }
 
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             new TargetExpansion(this, targets).register();
@@ -61,9 +88,16 @@ public final class PanelKey extends JavaPlugin implements Listener {
         reloadConfig();
         consoleCommand = getConfig().getString("console-command",
                 "dm open admin_panel %player%");
+        playerCommand = getConfig().getString("player-console-command",
+                "dm open player_menu %player%");
         permission = getConfig().getString("permission", "serverpanel.admin");
         requireSneak = getConfig().getBoolean("require-sneak", true);
         debug = getConfig().getBoolean("debug", false);
+        sequenceCommand = getConfig().getStringList("sequence-command");
+        guardStop = getConfig().getBoolean("guard-stop", true);
+        gunPackUrl = getConfig().getString("gun-pack-url", "");
+        gunPackPermission = getConfig().getString("gun-pack-permission", "serverpanel.gunpack");
+        gunPackDelay = getConfig().getDouble("gun-pack-delay-seconds", 5.0);
     }
 
     @Override
@@ -83,9 +117,20 @@ public final class PanelKey extends JavaPlugin implements Listener {
             player.sendMessage("已傳送到出生點");
             return true;
         }
+        // The /tpa picker is for everyone too; /tpa itself is gated by
+        // EssentialsX's own essentials.tpa permission.
+        if (command.getName().equalsIgnoreCase("tpamenu")) {
+            tpaMenu.open(player);
+            return true;
+        }
 
         if (!permission.isEmpty() && !player.hasPermission(permission)) {
             player.sendMessage("你沒有權限使用這個功能。");
+            return true;
+        }
+
+        if (command.getName().equalsIgnoreCase("serverctl")) {
+            serverControl.handle(player, args);
             return true;
         }
 
@@ -117,14 +162,17 @@ public final class PanelKey extends JavaPlugin implements Listener {
         if (requireSneak && !sneaking) {
             return;
         }
-        if (!allowed) {
+        // Players without the admin permission get the player menu instead,
+        // unless player-console-command is set to "" in the config.
+        String command = allowed ? consoleCommand : playerCommand;
+        if (command.isEmpty()) {
             return;
         }
 
         // Without this the offhand item would swap as well as opening the menu.
         event.setCancelled(true);
 
-        String toRun = consoleCommand.replace("%player%", player.getName());
+        String toRun = command.replace("%player%", player.getName());
         boolean ran = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), toRun);
         if (debug) {
             getLogger().info("dispatched: " + toRun + " -> " + ran);

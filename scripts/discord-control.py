@@ -22,7 +22,6 @@ import struct
 import subprocess
 import sys
 import time
-import urllib.request
 
 import discord
 from discord import app_commands
@@ -30,6 +29,34 @@ from discord.ext import tasks
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import settings  # noqa: E402
+
+import importlib.util  # noqa: E402
+
+# The tunnel probes live in check-server.py, shared with both consoles. Its
+# name has a hyphen, so it is loaded by path.
+_spec = importlib.util.spec_from_file_location(
+    "probe", os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "check-server.py"))
+probe = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(probe)
+
+# Planned stops and restarts go through the 5-minute in-game countdown the
+# server rules promise players.
+_spec = importlib.util.spec_from_file_location(
+    "sequence", os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "restart-sequence.py"))
+sequence = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(sequence)
+
+# /inv reads player inventories with the same code as the web console's
+# InvSee++ panel - straight from the player files, so it works with the server
+# up or down. plugin_panels wants the rcon.py module itself (this file's own
+# rcon() is a subprocess wrapper with a different signature).
+import rcon as rcon_client  # noqa: E402
+import plugin_panels  # noqa: E402
+plugin_panels.setup(rcon_client)
+# The web console's public entrance account (/console-password).
+import console_auth  # noqa: E402
 
 # The bot runs under pythonw.exe, which has no console of its own. Any console
 # child it spawns therefore gets a brand new window - and playit_running() runs
@@ -161,66 +188,24 @@ def server_status(timeout=5):
 
 
 # ------------------------------------------------------------ tunnel probes
-RAKNET_MAGIC = bytes.fromhex("00ffff00fefefefefdfdfdfd12345678")
-
-
-def bedrock_tunnel_ok(timeout=6):
-    """RakNet unconnected ping through the public Bedrock tunnel.
-
-    Unlike the Java tunnel, playit does not block connections coming from the
-    agent's own address over UDP, so this one can be checked from here.
-    """
-    pkt = (b"\x01" + struct.pack(">Q", int(time.time() * 1000)) + RAKNET_MAGIC
-           + struct.pack(">Q", 0x1234567890ABCDEF))
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.settimeout(timeout)
-    try:
-        s.sendto(pkt, (CFG["bedrockAddress"], CFG["bedrockPort"]))
-        data, _ = s.recvfrom(4096)
-        return bool(data) and data[0] == 0x1C
-    except Exception:
-        return False
-    finally:
-        s.close()
-
-
+# The checks themselves live in check-server.py, so the bot, both consoles and
+# the command-line check all judge each path (playit, Warden, cloudflared) the
+# same way.
 def playit_running():
-    try:
-        out = subprocess.run(["sc", "query", "playitd"], capture_output=True,
-                             text=True, timeout=15,
-                             creationflags=NO_WINDOW).stdout
-        return "RUNNING" in out
-    except Exception:
-        return False
-
-
-def outside_view(timeout=20):
-    """Ask a third party whether the Java tunnel is reachable.
-
-    playit refuses connections to a tunnel from the agent's own public IP, so
-    an outside vantage point is the only way to check the Java side.
-    Returns True, False, or None when the checker itself did not answer.
-    """
-    url = f"https://api.mcstatus.io/v2/status/java/{CFG['javaAddress']}"
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "mc-control-bot"})
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return bool(json.loads(resp.read().decode("utf-8")).get("online"))
-    except Exception:
-        return None
+    return probe.playit_running()
 
 
 def tunnel_report():
     """One line describing whether outsiders can actually get in."""
-    if not playit_running():
-        return False, "🔴 隧道未啟動（playit 服務停止中）"
-    if not bedrock_tunnel_ok():
-        return False, "🟠 playit 執行中，但公開位址沒有回應"
-    outside = outside_view()
+    down = [n for n, r in probe.tunnel_services() if not r]
+    if down:
+        return False, f"🔴 隧道未啟動（{'、'.join(down)} 沒在執行）"
+    ok, detail, _ = probe.tunnel_status()
+    if not ok:
+        return False, f"🟠 公開位址測試失敗：{detail}"
+    outside, odetail, _ = probe.external_view()
     if outside is False:
-        return False, "🟠 基岩隧道正常，但外部看不到 Java 版"
-    if outside is None:
-        return True, "🟢 隧道正常（外部檢測服務無回應，未能複查）"
+        return False, f"🟠 這台測得到，但外部檢測失敗：{odetail}"
     return True, "🟢 隧道正常，外部連得進來"
 
 
@@ -251,10 +236,9 @@ def rcon(*commands):
 
 
 def launch_server():
-    # cmd /c start detaches the batch file into its own window, so the bot is
-    # not the server's parent and can be restarted without killing it.
+    # Detached and windowless - see settings.server_launch_command.
     subprocess.Popen(
-        ["cmd", "/c", "start", "MC Server", "/min", CFG["startBat"], "/nopause"],
+        settings.server_launch_command(CFG["startBat"]),
         cwd=CFG["serverDir"],
         creationflags=NO_WINDOW,
     )
@@ -285,8 +269,19 @@ def bluemap_idle():
 
 
 def addresses_block():
-    return (f"Java：`{CFG['javaAddress']}`\n"
-            f"基岩：`{CFG['bedrockAddress']}` 連接埠 `{CFG['bedrockPort']}`")
+    if probe.JAVA_VIA == "cloudflared":
+        # A Cloudflare Tunnel only carries raw TCP to clients running
+        # cloudflared access.
+        java = (f"Java：先執行 `cloudflared access tcp --hostname {CFG['javaAddress']}"
+                f" --url localhost:25565`，再連 `localhost:25565`")
+    else:
+        java = f"Java：`{CFG['javaAddress']}`（直接輸入，不用連接埠）"
+    if probe.BE_VIA == "warden":
+        bedrock = (f"基岩：`{CFG['bedrockAddress']}`（26.40 以上；"
+                   f"26.60 之前連接埠填 `443`）")
+    else:
+        bedrock = f"基岩：`{CFG['bedrockAddress']}` 連接埠 `{CFG['bedrockPort']}`"
+    return java + "\n" + bedrock
 
 
 # --------------------------------------------------------------- monitoring
@@ -355,7 +350,8 @@ async def monitor_tick():
         # Self-heal: the most common failure by far is the playit service
         # being stopped (a stale cleanup from a previous run does this).
         # Restarting it is safe and fixes the outage without waking anyone.
-        if not ok and not await asyncio.to_thread(playit_running):
+        if (not ok and "playit" in (probe.JAVA_VIA, probe.BE_VIA)
+                and not await asyncio.to_thread(playit_running)):
             log("tunnel down and playit stopped - attempting restart")
             healed = await asyncio.to_thread(restart_playit)
             if healed:
@@ -414,6 +410,24 @@ async def monitor_tick():
             + "備份腳本無法恢復存檔，請執行 `/rcon command: save-on` 確認。"
         )
         log("event: save-off warning")
+        try:
+            os.remove(marker)
+        except OSError:
+            pass
+
+    # backup-world.ps1 leaves this when the new backup did not verify.
+    marker = os.path.join(HERE, "BACKUP-WARNING")
+    if os.path.exists(marker):
+        try:
+            name = open(marker, encoding="utf-8-sig", errors="replace").read().strip()
+        except OSError:
+            name = "(讀取失敗)"
+        await channel.send(
+            "🔴 **今天的備份沒有通過檢查**" + chr(10)
+            + "`" + name[:200] + "`" + chr(10)
+            + "舊的備份都保留著。請看 `windows\\backup-world.log`。"
+        )
+        log("event: backup verification failed")
         try:
             os.remove(marker)
         except OSError:
@@ -595,31 +609,44 @@ async def start_cmd(interaction: discord.Interaction):
     log(f"start finished, tunnel_ok={ok}")
 
 
-@bot.tree.command(name="stop", description="關閉伺服器（會先存檔）")
-@app_commands.default_permissions(manage_guild=True)
-async def stop_cmd(interaction: discord.Interaction):
+async def _countdown(interaction, mode):
     if not authorized(interaction):
         return await deny(interaction)
-
     st = await asyncio.to_thread(server_status)
     if not st:
         return await interaction.response.send_message("伺服器本來就沒在跑。", ephemeral=True)
-
-    if st["online"]:
+    await interaction.response.defer(ephemeral=True)
+    log(f"{mode} requested by {interaction.user}")
+    ok, msg = await asyncio.to_thread(sequence.launch, mode, None, f"discord {interaction.user}")
+    if ok and st["online"]:
         who = "、".join(st["list"]) or f"{st['online']} 人"
-        await interaction.response.send_message(f"⚠️ 還有人在線上（{who}），仍會關閉並存檔…", ephemeral=True)
-    else:
-        await interaction.response.defer(ephemeral=True)
+        msg += f"\n線上：{who}。可以用 `/cancel` 取消。"
+    await interaction.followup.send(("⏳ " if ok else "⚠️ ") + msg, ephemeral=True)
 
-    log(f"stop requested by {interaction.user}")
-    ok, out = await asyncio.to_thread(rcon, "save-all", "stop")
-    msg = ("🛑 已送出關機指令，世界已存檔。\n"
-           "存檔需要約一分鐘，這期間先不要 `/start`。"
-           if ok else f"關機指令失敗：\n```{out[:500]}```")
-    if interaction.response.is_done():
-        await interaction.followup.send(msg, ephemeral=True)
-    else:
-        await interaction.response.send_message(msg, ephemeral=True)
+
+@bot.tree.command(name="stop", description="關閉伺服器（遊戲裡先倒數 5 分鐘）")
+@app_commands.default_permissions(manage_guild=True)
+async def stop_cmd(interaction: discord.Interaction):
+    await _countdown(interaction, "stop")
+
+
+@bot.tree.command(name="restart", description="重啟伺服器（遊戲裡先倒數 5 分鐘）")
+@app_commands.default_permissions(manage_guild=True)
+async def restart_cmd(interaction: discord.Interaction):
+    await _countdown(interaction, "restart")
+
+
+@bot.tree.command(name="cancel", description="取消進行中的關閉／重啟倒數")
+@app_commands.default_permissions(manage_guild=True)
+async def cancel_cmd(interaction: discord.Interaction):
+    if not authorized(interaction):
+        return await deny(interaction)
+    cur = await asyncio.to_thread(sequence.pending)
+    if not cur:
+        return await interaction.response.send_message("沒有進行中的倒數。", ephemeral=True)
+    await asyncio.to_thread(sequence.request_cancel)
+    log(f"countdown cancelled by {interaction.user}")
+    await interaction.response.send_message("✅ 已取消倒數，遊戲裡會公告。", ephemeral=True)
 
 
 @bot.tree.command(name="rcon", description="執行伺服器指令（完整權限，請小心）")
@@ -682,6 +709,13 @@ async def render_cmd(interaction: discord.Interaction):
         )
         return
 
+    # Without a Cloudflare Pages project the map is served live (through the
+    # tunnel), so there is nothing to upload.
+    if not settings.get("cloudflare", "projectName"):
+        await interaction.followup.send("🗺️ 地圖已重新渲染" + chr(10) + CFG["mapUrl"])
+        log("render finished (live map, no upload)")
+        return
+
     ok, out = await asyncio.to_thread(run_map_sync)
     if not ok:
         tail = out.strip().splitlines()[-3:] if out.strip() else ["(沒有輸出)"]
@@ -704,12 +738,145 @@ async def render_cmd(interaction: discord.Interaction):
 
 @bot.tree.command(name="ip", description="顯示連線位址")
 async def ip_cmd(interaction: discord.Interaction):
+    st = await asyncio.to_thread(server_status)
+    version = f"（需要 {st['version'].split()[-1]}）" if st else ""
     await interaction.response.send_message(
-        f"**Java 版**（需要 26.2）\n`{CFG['javaAddress']}`\n\n"
-        f"**基岩版**\n`{CFG['bedrockAddress']}`　連接埠 `{CFG['bedrockPort']}`\n\n"
+        f"**連線位址**{version}\n{addresses_block()}\n\n"
         f"**世界地圖**\n{CFG['mapUrl']}"
         , ephemeral=True
     )
+
+
+def _item_text(it):
+    text = discord.utils.escape_markdown(it["custom"] or it["name"])
+    if it["custom"]:
+        text += f"（{it['name']}）"
+    if it.get("count", 1) > 1:
+        text += f" ×{it['count']}"
+    if it["enchants"]:
+        text += "｜" + "、".join(it["enchants"])
+    return text
+
+
+def _add_lines(embed, title, lines):
+    """Lines as one or more fields, each under Discord's 1024-character cap."""
+    if not lines:
+        embed.add_field(name=title, value="（空的）", inline=False)
+        return
+    chunk, part = [], 0
+    for line in lines:
+        if chunk and len(chr(10).join(chunk + [line])) > 1000:
+            embed.add_field(name=title if part == 0 else title + "（續）",
+                            value=chr(10).join(chunk), inline=False)
+            chunk, part = [], part + 1
+        chunk.append(line)
+    embed.add_field(name=title if part == 0 else title + "（續）",
+                    value=chr(10).join(chunk), inline=False)
+
+
+def inventory_embeds(d):
+    """Three embeds - status and equipment with the hotbar, the main
+    inventory, the ender chest - each well under Discord's 6000-character cap."""
+    colour = 0x4F6238
+    slots = {int(k): v for k, v in d["slots"].items()}
+    ender = {int(k): v for k, v in d["ender"].items()}
+
+    head = discord.Embed(
+        title=f"{discord.utils.escape_markdown(d['player'])} 的背包",
+        description=(f"{'🟢 在線上' if d['online'] else '⚫ 離線'}｜存檔於 {d['saved']}\n"
+                     f"位置 {d['where']}｜{d['mode']}模式\n"
+                     f"生命 {d['health']}｜飢餓 {d['food']}｜等級 {d['level']}"),
+        colour=colour)
+    _add_lines(head, "裝備", [f"{e['label']}：{_item_text(e['item'])}"
+                            for e in d["equipment"] if e["item"]])
+    _add_lines(head, "快捷欄", [
+        f"{'▶' if k == d['selected'] else '　'}`{k + 1}` {_item_text(slots[k])}"
+        for k in range(9) if k in slots])
+
+    main = discord.Embed(colour=colour)
+    _add_lines(main, "背包", [f"`{k:>2}` {_item_text(slots[k])}"
+                            for k in range(9, 36) if k in slots])
+
+    chest = discord.Embed(colour=colour)
+    _add_lines(chest, "終界箱", [f"`{k:>2}` {_item_text(ender[k])}"
+                              for k in sorted(ender)])
+    return [head, main, chest]
+
+
+async def _player_choices(interaction: discord.Interaction, current: str):
+    names = await asyncio.to_thread(plugin_panels.known_players)
+    cur = current.lower()
+    return [app_commands.Choice(name=n, value=n) for n in names if cur in n.lower()][:25]
+
+
+@bot.tree.command(name="inv", description="查看玩家的背包、裝備和終界箱（只能看，不能改）")
+@app_commands.default_permissions(manage_guild=True)
+@app_commands.describe(player="玩家名稱（基岩版玩家前面有一個點）")
+@app_commands.autocomplete(player=_player_choices)
+async def inv_cmd(interaction: discord.Interaction, player: str):
+    if not authorized(interaction):
+        return await deny(interaction)
+    # Ephemeral: someone's inventory and position are nobody else's business.
+    await interaction.response.defer(ephemeral=True)
+    log(f"inventory of {player} requested by {interaction.user}")
+    try:
+        data = await asyncio.to_thread(plugin_panels.inventory, player)
+    except plugin_panels.BadInput as exc:
+        return await interaction.followup.send(f"⚠️ {exc}", ephemeral=True)
+    except Exception as exc:
+        log(f"inventory of {player} failed: {exc}")
+        return await interaction.followup.send(f"⚠️ 讀不到背包：{exc}", ephemeral=True)
+    for embed in inventory_embeds(data):
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+
+class ConsolePasswordModal(discord.ui.Modal, title="網頁控制台遠端入口的帳號密碼"):
+    """A Discord form rather than command options: options are echoed in the
+    channel's command log, a modal's fields are not."""
+
+    def __init__(self, current_user):
+        super().__init__()
+        self.username = discord.ui.TextInput(
+            label="帳號（英文字母、數字、_ . -）", max_length=32,
+            default=current_user or None)
+        self.password = discord.ui.TextInput(
+            label="密碼（至少 %d 個字）" % console_auth.MIN_PASSWORD,
+            min_length=console_auth.MIN_PASSWORD, max_length=128)
+        self.again = discord.ui.TextInput(
+            label="再輸入一次密碼",
+            min_length=console_auth.MIN_PASSWORD, max_length=128)
+        for item in (self.username, self.password, self.again):
+            self.add_item(item)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if self.password.value != self.again.value:
+            return await interaction.response.send_message(
+                "⚠️ 兩次密碼不一樣，沒有變更。", ephemeral=True)
+        name = self.username.value.strip()
+        try:
+            await asyncio.to_thread(console_auth.set_login, name, self.password.value)
+        except ValueError as exc:
+            return await interaction.response.send_message(f"⚠️ {exc}，沒有變更。", ephemeral=True)
+        log(f"web console login set to user {name!r} by {interaction.user}")
+        url = settings.get("webConsole", "publicUrl", default="")
+        # The control token only lives on this machine; a phone logging in
+        # from outside for the first time has no other way to get it.
+        token = (await asyncio.to_thread(console_auth._read)).get("token", "")
+        await interaction.response.send_message(
+            f"✅ 已設定帳號 **{discord.utils.escape_markdown(name)}**，立即生效。\n{url}\n"
+            f"登入後，按鈕和指令還需要控制權杖：||{token}||（點一下顯示，只有你看得到）",
+            ephemeral=True)
+
+
+@bot.tree.command(name="console-password",
+                  description="設定網頁控制台遠端入口的帳號密碼")
+@app_commands.default_permissions(manage_guild=True)
+async def console_password_cmd(interaction: discord.Interaction):
+    # Same trust as /rcon: the console can run any command too.
+    if interaction.user.id not in CFG["rconUserIds"]:
+        return await deny(interaction)
+    current = await asyncio.to_thread(console_auth.configured_user)
+    await interaction.response.send_modal(ConsolePasswordModal(current))
 
 
 if __name__ == "__main__":

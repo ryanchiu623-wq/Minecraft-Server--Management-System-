@@ -33,6 +33,18 @@ $marker    = Join-Path $serverDir 'server.running'
 $histFile  = Join-Path $scriptDir 'watchdog-restarts.txt'
 $startBat  = Join-Path $serverDir 'start.bat'
 $botTask   = 'Minecraft Discord Control Bot'
+$tunnelTask = 'MC Cloudflare Tunnel'
+# Which agent carries which path - the same rules as check-server.py, which
+# also accepts the older single "tunnel.type" key.
+$legacy   = if ($toolkit) { Get-ToolkitValue $toolkit 'tunnel.type' 'playit' } else { 'playit' }
+$javaVia  = if ($toolkit) { Get-ToolkitValue $toolkit 'tunnel.java' $(if ($legacy -eq 'cloudflared') { 'cloudflared' } else { 'playit' }) } else { 'playit' }
+$beVia    = if ($toolkit) { Get-ToolkitValue $toolkit 'tunnel.bedrock' $(if ($legacy -eq 'cloudflared') { 'warden' } else { 'playit' }) } else { 'playit' }
+$webVia   = if ($toolkit) { Get-ToolkitValue $toolkit 'tunnel.web' $(if ($legacy -eq 'cloudflared') { 'cloudflared' } else { 'pages' }) } else { 'pages' }
+$needCloudflared = ($javaVia -eq 'cloudflared') -or ($webVia -eq 'cloudflared')
+$needPlayit      = ($javaVia -eq 'playit') -or ($beVia -eq 'playit')
+# The Discord bot looks for its warning markers in scripts\, beside itself.
+$markerDir = Join-Path (Split-Path -Parent $scriptDir) 'scripts'
+if (-not (Test-Path $markerDir)) { $markerDir = $scriptDir }
 
 function Write-Log {
     param([string]$Message, [string]$Level = 'INFO')
@@ -54,9 +66,13 @@ function Test-ServerProcess {
 function Test-RestartInProgress {
     # restart-sequence.py holds this lock between stopping and starting. Time
     # limit so a restart script that died cannot mute the watchdog for good.
+    # A lock written before Windows last started belongs to a restart that
+    # cannot still be running (safe-power.py leaves one behind on purpose).
     $lock = Join-Path $serverDir 'restart.lock'
     if (-not (Test-Path $lock)) { return $false }
-    return (((Get-Date) - (Get-Item $lock).LastWriteTime).TotalMinutes -lt 10)
+    $written = (Get-Item $lock).LastWriteTime
+    if ($written -lt (Get-CimInstance Win32_OperatingSystem).LastBootUpTime) { return $false }
+    return (((Get-Date) - $written).TotalMinutes -lt 10)
 }
 
 function Test-ServerPort {
@@ -88,13 +104,18 @@ if (Test-Path $marker) {
         if ($recent.Count -ge $MaxRestartsPerHour) {
             Write-Log "Server is down but already restarted $($recent.Count) times this hour - not restarting again. Something is wrong; check logs\latest.log and crash-reports\." 'ERROR'
         } elseif ($PSCmdlet.ShouldProcess('Minecraft server', 'restart')) {
-            Write-Log 'Server marked as running but no java process found - restarting' 'WARN'
-            # The embedded quotes on the title are deliberate. Start-Process does
-            # not quote list elements containing spaces, so a bare 'MC Server'
-            # reaches cmd as two words: start takes "MC" as the window title and
-            # tries to run "Server", and start.bat is never launched at all.
-            Start-Process -FilePath 'cmd.exe' `
-                -ArgumentList '/c', 'start', '"MC Server"', '/min', $startBat, '/nopause' `
+            # safe-power.py leaves the marker on purpose before a planned
+            # reboot or shutdown, so the server comes back after the next logon.
+            if ((Get-Content $marker -Raw -ErrorAction SilentlyContinue) -match 'planned-power') {
+                Write-Log 'Starting the server again after a planned reboot or shutdown'
+            } else {
+                Write-Log 'Server marked as running but no java process found - restarting' 'WARN'
+            }
+            # No window, like every other launcher (scripts\settings.py,
+            # server_launch_command): a window can be closed by mistake, and
+            # closing it kills java without saving.
+            Start-Process -FilePath (Join-Path $env:SystemRoot 'System32\conhost.exe') `
+                -ArgumentList '--headless', 'cmd.exe', '/c', $startBat, '/nopause' `
                 -WorkingDirectory $scriptDir -WindowStyle Hidden
             Add-Content -Path $histFile -Value (Get-Date -Format s) -Encoding ASCII
             $actions++
@@ -107,7 +128,19 @@ if (Test-Path $marker) {
 # ---- 2. tunnel -----------------------------------------------------------
 # Only meaningful while the server is up: with it down the tunnel is supposed
 # to be stopped too.
-if (Test-ServerPort) {
+if ($needCloudflared) {
+    # Unlike playit, the Cloudflare tunnel also carries the web map, so it
+    # stays up whether or not the server is running.
+    $tt = Get-ScheduledTask -TaskName $tunnelTask -ErrorAction SilentlyContinue
+    if ($tt -and $tt.State -ne 'Running') {
+        if ($PSCmdlet.ShouldProcess($tunnelTask, 'start')) {
+            Write-Log "Cloudflare tunnel task is $($tt.State) - starting it" 'WARN'
+            Start-ScheduledTask -TaskName $tunnelTask
+            $actions++
+        }
+    }
+}
+if ($needPlayit -and (Test-ServerPort)) {
     $svc = Get-Service playitd -ErrorAction SilentlyContinue
     if ($svc -and $svc.Status -ne 'Running') {
         if ($PSCmdlet.ShouldProcess('playitd', 'start')) {
@@ -133,7 +166,7 @@ if ($bot -and $bot.State -ne 'Running') {
 
 # ---- 4. crash reports ----------------------------------------------------
 # Surface crashes rather than letting them pile up unnoticed.
-$crashDir = Join-Path $scriptDir 'crash-reports'
+$crashDir = Join-Path $serverDir 'crash-reports'
 if (Test-Path $crashDir) {
     $fresh = Get-ChildItem $crashDir -Filter '*.txt' -ErrorAction SilentlyContinue |
              Where-Object { $_.LastWriteTime -gt (Get-Date).AddHours(-1) }
@@ -142,7 +175,7 @@ if (Test-Path $crashDir) {
         if (-not (Test-Path $seen)) {
             Write-Log "NEW CRASH REPORT: $($c.Name)" 'ERROR'
             Set-Content -Path $seen -Value (Get-Date -Format s) -Encoding ASCII
-            Set-Content -Path (Join-Path $scriptDir 'CRASH-WARNING') -Value $c.Name -Encoding UTF8
+            Set-Content -Path (Join-Path $markerDir 'CRASH-WARNING') -Value $c.Name -Encoding UTF8
         }
     }
 }

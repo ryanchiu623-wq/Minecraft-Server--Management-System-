@@ -18,20 +18,23 @@ items:
     slot: 4
     display_name: '&c&l所有玩家都會被斷線'
     lore:
-      - '&7世界會先存檔，不會掉進度'
-      - '&7之後要重開得回到電腦前，'
-      - '&7或用 Discord 的 &f/start'
+      - '&7遊戲裡會先倒數 5 分鐘（5／3／1 分鐘和最後 30 秒廣播），'
+      - '&7時間到才存檔關機，不會掉進度'
+      - '&7倒數中可以在管理面板按「取消倒數」'
+      - '&7關機後要重開得回到電腦前，或用 Discord 的 &f/start'
 
   'confirm':
     material: RED_CONCRETE
     slot: 11
-    display_name: '&4&l確定關閉'
+    display_name: '&4&l確定關閉（倒數 5 分鐘）'
     lore:
-      - '&7存檔後立刻關機'
+      - '&7開始 5 分鐘倒數，時間到存檔關機'
+      - '&7沒有其他真人在線上時一樣會倒數（你也在線上）'
     left_click_commands:
-      - '[message] &c伺服器即將關閉…'
-      - '[console] save-all'
-      - '[console] stop'
+      # PanelKey runs the toolkit's restart-sequence.py: same countdown and
+      # cancel as the web console and the Discord bot. Never a bare "stop".
+      - '[close]'
+      - '[player] serverctl stop'
 
   'cancel':
     material: LIME_CONCRETE

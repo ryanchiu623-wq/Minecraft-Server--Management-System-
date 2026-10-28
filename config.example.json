@@ -6,6 +6,10 @@
   "startBat": "C:\\mc-paper\\start.bat",
   "keepBackups": 7,
 
+  "_backupMirror": "另一顆實體硬碟上的備份副本；不用的話 backupMirrorDir 留空",
+  "backupMirrorDir": "",
+  "keepMirror": 3,
+
   "java": {
     "_comment": "host 是玩家用的公開位址；localPort 是伺服器實際監聽的埠",
     "host": "mc.example.org",
@@ -20,12 +24,29 @@
     "localPort": 19132
   },
 
+  "tunnel": {
+    "_comment": "每條對外路徑走哪種隧道。java: playit | cloudflared；bedrock: playit | warden；web: pages | cloudflared",
+    "java": "playit",
+    "bedrock": "playit",
+    "web": "pages"
+  },
+
   "mapUrl": "https://your-map.pages.dev",
+  "bluemapMaps": ["world", "world_the_nether", "world_the_end"],
+
+  "flashback": {
+    "_comment": "SimplyFlashback：autoRecord 讓每個上線玩家都自動錄影；clientReplayDir 是 Flashback 模組的 replay 資料夾，留空就不複製",
+    "autoRecord": true,
+    "keepHours": 36,
+    "clientReplayDir": ""
+  },
 
   "webConsole": {
-    "_comment": "host 留 0.0.0.0 讓區網其他裝置連得到；控制權杖會自動產生在 web-console.config.json",
+    "_comment": "host 留 0.0.0.0 讓區網其他裝置連得到；控制權杖會自動產生在 web-console.config.json。publicPort 是給 Cloudflare 隧道的登入入口，只綁 127.0.0.1，不用就刪掉",
     "host": "0.0.0.0",
-    "port": 8099
+    "port": 8099,
+    "publicPort": 8098,
+    "publicUrl": "https://console.example.org"
   },
 
   "discord": {

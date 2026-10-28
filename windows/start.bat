@@ -63,15 +63,23 @@ echo.
 echo ============================================================
 echo  Starting BlueMap map sync (every %SYNC_MINUTES% min)...
 echo ============================================================
-start "bluemap-sync" /min powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0sync-loop.ps1" -IntervalMinutes %SYNC_MINUTES%
+REM No window of its own, like the server: one less window to close by mistake.
+REM Only installs that publish the map to Cloudflare Pages have the script; a
+REM map served live through the tunnel needs no sync.
+if exist "%~dp0sync-loop.ps1" (
+    start "" conhost.exe --headless powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0sync-loop.ps1" -IntervalMinutes %SYNC_MINUTES%
+) else (
+    echo No sync-loop.ps1 here - map is served live, nothing to sync.
+)
 
 echo.
 echo ============================================================
 echo  Starting Paper %MIN_RAM%-%MAX_RAM%
 echo  Java 25565 ^| Bedrock UDP 19132 ^| Map http://localhost:8100
 echo.
-echo  Type "stop" in this window to shut down cleanly.
-echo  Do NOT just close the window.
+echo  The toolkit runs this without a window. Stop the server with "stop"
+echo  here, or from the web console, the Discord bot or RCON.
+echo  Do NOT just close a window running this - the world is not saved.
 echo ============================================================
 echo.
 
@@ -120,8 +128,10 @@ REM whenever the console is in selection mode, which breaks title matching.
 powershell.exe -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"Name='powershell.exe'\" | Where-Object { $_.CommandLine -like '*sync-loop*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }" >nul 2>&1
 
 REM One final sync so the published map matches the world we just saved.
-echo Running a final map sync...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0sync-map.ps1"
+if exist "%~dp0sync-map.ps1" (
+    echo Running a final map sync...
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0sync-map.ps1"
+)
 
 echo Stopping playit tunnel agent...
 sc stop playitd >nul 2>&1

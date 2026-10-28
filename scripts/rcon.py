@@ -51,6 +51,21 @@ def strip_colors(text):
     return re.sub(r'§[0-9a-fk-orx]', '', text, flags=re.IGNORECASE)
 
 
+def list_names(reply):
+    """Names from a vanilla `minecraft:list` reply:
+    "There are 2 of a max of 20 players online: a, b"."""
+    _, _, names = reply.partition(':')
+    return [n.strip() for n in names.split(',') if n.strip()]
+
+
+def bot_names(reply):
+    """Bot names from FakePlayerPlugin's `fpp list` reply. Its bots are real
+    server players and show up in `minecraft:list`, so anything counting or
+    recording people has to take these out. Lines look like
+    "  testbot  ⏱ 3s"."""
+    return re.findall(r'(?m)^\s+([A-Za-z0-9_.]{1,17})\s+⏱', reply)
+
+
 def pack(req_id, req_type, body):
     payload = struct.pack('<ii', req_id, req_type) + body.encode('utf-8') + b'\x00\x00'
     return struct.pack('<i', len(payload)) + payload
@@ -103,8 +118,10 @@ def execute_each(commands, props=None):
             SENTINEL = 9999
             for i, cmd in enumerate(commands, start=2):
                 sock.sendall(pack(i, 2, cmd))
+                # 26.3 drops the connection when two packets arrive in one
+                # read, so wait for the first reply before the sentinel.
+                chunks = [read_packet(sock)[2]]
                 sock.sendall(pack(SENTINEL, 2, ''))
-                chunks = []
                 while True:
                     rid, _, body = read_packet(sock)
                     if rid == SENTINEL:
@@ -154,11 +171,13 @@ def main():
         # Long replies are split across several packets. Send a sentinel after
         # each command and collect packets until the sentinel's reply comes
         # back - everything before it belongs to the command.
+        # Minecraft 26.3 also drops the connection when two packets arrive in
+        # one read, so the sentinel goes out only after the first reply.
         SENTINEL = 9999
         for i, cmd in enumerate(sys.argv[1:], start=2):
             sock.sendall(pack(i, 2, cmd))           # 2 = command
+            chunks = [read_packet(sock)[2]]
             sock.sendall(pack(SENTINEL, 2, ''))
-            chunks = []
             while True:
                 req_id, _, body = read_packet(sock)
                 if req_id == SENTINEL:

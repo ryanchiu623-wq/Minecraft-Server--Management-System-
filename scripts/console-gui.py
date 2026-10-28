@@ -44,6 +44,11 @@ import settings  # noqa: E402
 MAP_URL = settings.get("mapUrl", default="")
 BACKUP_DIR = settings.get("backupDir", default="")
 SERVER_DIR = settings.server_dir()
+# start.bat lives with the server and the PowerShell helpers in windows\ -
+# neither sits beside this script, which is where these buttons used to look.
+START_BAT = settings.get("startBat", default=os.path.join(SERVER_DIR, "start.bat"))
+WINDOWS_DIR = os.path.join(os.path.dirname(HERE), "windows")
+MAPS = settings.get("bluemapMaps", default=["world", "world_the_nether", "world_the_end"])
 
 def _load(name, filename):
     """Load a sibling script as a module. Reuses the tested probe and RCON
@@ -57,6 +62,8 @@ def _load(name, filename):
 
 probe = _load("mcprobe", "check-server.py")
 rconmod = _load("mcrcon", "rcon.py")
+# Planned stops and restarts get the 5-minute warning the server rules promise.
+sequence = _load("mcsequence", "restart-sequence.py")
 
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
@@ -235,7 +242,9 @@ class Console(tk.Tk):
         self.buttons = {}
         for key, text, fn in [
             ("start", "啟動伺服器", self.do_start),
-            ("stop", "關閉伺服器", self.do_stop),
+            ("restart", "重啟（倒數 5 分）", self.do_restart),
+            ("stop", "關閉（倒數 5 分）", self.do_stop),
+            ("cancel", "取消倒數", self.do_cancel),
             ("backup", "立即備份", self.do_backup),
             ("render", "渲染並上傳地圖", self.do_render),
             ("playit", "重啟隧道", self.do_playit),
@@ -299,8 +308,12 @@ class Console(tk.Tk):
         ok, detail, lat = probe.java_status("127.0.0.1", 25565)
         st["java"] = (ok, detail, lat)
         st["bedrock_local"] = probe.bedrock_status("127.0.0.1", 19132)
-        st["playit"] = service_running()
-        st["bedrock_tunnel"] = probe.bedrock_status(probe.BE_HOST, probe.BE_PORT) if st["playit"] else (False, "playit 未執行", None)
+        # playit for Java and cloudflared for the map can each be down alone.
+        st["services"] = probe.tunnel_services()
+        down = [n for n, r in st["services"] if not r]
+        st["bedrock_tunnel"] = ((False, "、".join(down) + " 未執行", None) if down
+                                else probe.tunnel_status())
+        st["countdown"] = sequence.pending()
         st["backup"] = latest_backup()
         st["sync_h"] = last_sync()
         st["heap"] = jvm_heap()
@@ -308,7 +321,7 @@ class Console(tk.Tk):
         now = time.time()
         if now - self._last_slow > self.POLL_SLOW:
             self._last_slow = now
-            self._outside = probe.external_view(probe.JAVA_HOST)
+            self._outside = probe.external_view()
         st["outside"] = self._outside
         return st
 
@@ -333,8 +346,9 @@ class Console(tk.Tk):
         self.set_card("server", "#2e9e4f" if up else "#c62828",
                       jdetail if up else "未執行")
 
-        if not st["playit"]:
-            self.set_card("tunnel", "#c62828", "playit 未執行")
+        down = [n for n, r in st["services"] if not r]
+        if down:
+            self.set_card("tunnel", "#c62828", "、".join(down) + " 未執行")
         elif not st["bedrock_tunnel"][0]:
             self.set_card("tunnel", "#e08b1f", "公開位址無回應")
         elif st["outside"] and st["outside"][0] is False:
@@ -370,12 +384,17 @@ class Console(tk.Tk):
         lines = [
             f"Java     127.0.0.1:25565   {jdetail}" + (f"   {jlat} ms" if jlat else ""),
             f"基岩     127.0.0.1:19132   {st['bedrock_local'][1]}",
-            f"playit   服務              {'RUNNING' if st['playit'] else 'STOPPED'}",
-            f"隧道     {probe.BE_HOST}:{probe.BE_PORT}   {st['bedrock_tunnel'][1]}",
-            f"外部     {probe.JAVA_HOST}   {outside_text}",
+            *[f"{n:<8} 服務              {'RUNNING' if r else 'STOPPED'}"
+              for n, r in st["services"]],
+            f"隧道     {st['bedrock_tunnel'][1]}",
+            f"外部     {st['outside'][1] if st['outside'] else probe.JAVA_HOST}   {outside_text}",
         ]
         if b:
             lines.append(f"備份     {b['name']}   {b['mb']:.1f} MB")
+        cd = st.get("countdown")
+        if cd:
+            verb = "關閉" if cd.get("mode") == "stop" else "重啟"
+            lines.insert(0, f"⚠ {verb}倒數中，剩 {cd['seconds_left'] // 60}:{cd['seconds_left'] % 60:02d}（可按「取消倒數」）")
         self.detail.configure(state="normal")
         self.detail.delete("1.0", "end")
         self.detail.insert("1.0", "\n".join(lines))
@@ -394,7 +413,8 @@ class Console(tk.Tk):
             except (IndexError, ValueError):
                 online = 0
             if online:
-                ok2, out2 = rcon("list")
+                # minecraft:list: EssentialsX's /list is translated and grouped.
+                ok2, out2 = rcon("minecraft:list")
                 if ok2 and ":" in out2:
                     tail = out2.rsplit(":", 1)[-1].strip()
                     names = [n.strip() for n in tail.split(",") if n.strip()]
@@ -427,14 +447,13 @@ class Console(tk.Tk):
             return
 
         def go():
-            subprocess.Popen(["cmd", "/c", "start", "MC Server", "/min",
-                              os.path.join(HERE, "start.bat"), "/nopause"],
-                             cwd=HERE, creationflags=NO_WINDOW)
+            subprocess.Popen(settings.server_launch_command(START_BAT),
+                             cwd=SERVER_DIR, creationflags=NO_WINDOW)
             for _ in range(40):
                 time.sleep(3)
                 if probe.java_status("127.0.0.1", 25565)[0]:
                     return "伺服器已啟動"
-            return "兩分鐘內沒有起來，請看伺服器視窗"
+            return "兩分鐘內沒有起來，請看伺服器的 logs\\latest.log"
         self._task("啟動伺服器", go)
 
     def do_stop(self):
@@ -442,18 +461,33 @@ class Console(tk.Tk):
         if not st[0]:
             messagebox.showinfo("未執行", "伺服器本來就沒在跑。")
             return
-        if not messagebox.askyesno("確認關閉", "會先存檔再關閉，線上玩家都會斷線。\n確定要關閉伺服器嗎？"):
+        if not messagebox.askyesno("確認關閉", "會先在遊戲裡倒數 5 分鐘、存檔再關閉。\n確定要關閉伺服器嗎？"):
             return
-        self._task("關閉伺服器", lambda: rcon("save-all", "stop")[1].strip() or "已送出關機指令")
+        self._task("關閉伺服器", lambda: sequence.launch("stop", by="desktop")[1])
+
+    def do_restart(self):
+        if not probe.java_status("127.0.0.1", 25565)[0]:
+            messagebox.showinfo("未執行", "伺服器沒在跑，用「啟動伺服器」。")
+            return
+        if not messagebox.askyesno("確認重啟", "會先在遊戲裡倒數 5 分鐘再重啟。\n確定嗎？"):
+            return
+        self._task("重啟伺服器", lambda: sequence.launch("restart", by="desktop")[1])
+
+    def do_cancel(self):
+        if not sequence.pending():
+            messagebox.showinfo("沒有倒數", "目前沒有進行中的倒數。")
+            return
+        sequence.request_cancel()
+        self.log("已取消倒數，遊戲裡會公告")
 
     def do_backup(self):
         self._task("備份世界", lambda: run(
             ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
-             "-File", os.path.join(HERE, "backup-world.ps1")], timeout=900)[1].strip().splitlines()[-1])
+             "-File", os.path.join(WINDOWS_DIR, "backup-world.ps1")], timeout=900)[1].strip().splitlines()[-1])
 
     def do_render(self):
         def go():
-            rcon(*[f"bluemap update {m}" for m in ("overworld", "world", "world_the_end")])
+            rcon(*[f"bluemap update {m}" for m in MAPS])
             for _ in range(40):
                 time.sleep(10)
                 ok, out = rcon("bluemap")
@@ -461,8 +495,11 @@ class Console(tk.Tk):
                     break
             else:
                 return "渲染超過 7 分鐘，先不上傳"
+            if probe.WEB_VIA == "cloudflared":
+                # Served live through the tunnel: nothing to upload.
+                return "地圖已重新渲染"
             ok, out = run(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass",
-                           "-File", os.path.join(HERE, "sync-map.ps1")], timeout=900)
+                           "-File", os.path.join(WINDOWS_DIR, "sync-map.ps1")], timeout=900)
             return "地圖已渲染並上傳" if ok else f"上傳失敗: {out.strip().splitlines()[-1]}"
         self._task("渲染並上傳地圖", go)
 

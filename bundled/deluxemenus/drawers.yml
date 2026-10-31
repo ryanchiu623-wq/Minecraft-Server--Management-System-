@@ -1,0 +1,150 @@
+# 中藥櫃（RyanDrawers）
+# 管理員用：免費拿抽屜和容量升級，給「選擇要給誰」選的人。
+# 開啟方式：工具箱裡的「中藥櫃」，或 /drawersmenu　權限：serverpanel.toolbox
+# 一般玩家在玩家選單用鐵錠換單格抽屜（/drawers buy），不經過這裡。
+
+open_command:
+  - drawersmenu
+
+size: 36
+menu_title: '&8&l中藥櫃　&7給：&f%panelkey_target_label%'
+
+open_requirement:
+  requirements:
+    perm:
+      type: has permission
+      permission: serverpanel.toolbox
+
+items:
+
+  # ---------- 第二排：三種抽屜 ----------
+  'single':
+    material: BARREL
+    slot: 11
+    display_name: '&e&l單格抽屜'
+    lore:
+      - '&7一格，基本容量 32 組'
+      - '&7左鍵 1 個，右鍵 16 個'
+    left_click_commands:
+      - '[console] drawers give %panelkey_target% single 1'
+      - '[message] &e已給予單格抽屜'
+    right_click_commands:
+      - '[console] drawers give %panelkey_target% single 16'
+      - '[message] &e已給予單格抽屜 x16'
+
+  'double':
+    material: BARREL
+    slot: 13
+    display_name: '&e&l雙格抽屜'
+    lore:
+      - '&7上下兩格，每格基本容量 16 組'
+      - '&7左鍵 1 個，右鍵 16 個'
+    left_click_commands:
+      - '[console] drawers give %panelkey_target% double 1'
+      - '[message] &e已給予雙格抽屜'
+    right_click_commands:
+      - '[console] drawers give %panelkey_target% double 16'
+      - '[message] &e已給予雙格抽屜 x16'
+
+  'quad':
+    material: BARREL
+    slot: 15
+    display_name: '&e&l四格抽屜'
+    lore:
+      - '&72×2 四格，每格基本容量 8 組'
+      - '&7左鍵 1 個，右鍵 16 個'
+    left_click_commands:
+      - '[console] drawers give %panelkey_target% quad 1'
+      - '[message] &e已給予四格抽屜'
+    right_click_commands:
+      - '[console] drawers give %panelkey_target% quad 16'
+      - '[message] &e已給予四格抽屜 x16'
+
+  # ---------- 第三排：容量升級 ----------
+  'upgrade1':
+    material: OBSIDIAN
+    slot: 20
+    display_name: '&b&l儲存升級 I（黑曜石）'
+    lore:
+      - '&7容量 ×2'
+      - '&7左鍵 1 個，右鍵 8 個'
+    left_click_commands:
+      - '[console] drawers give %panelkey_target% upgrade1 1'
+      - '[message] &b已給予儲存升級 I'
+    right_click_commands:
+      - '[console] drawers give %panelkey_target% upgrade1 8'
+      - '[message] &b已給予儲存升級 I x8'
+
+  'upgrade2':
+    material: IRON_INGOT
+    slot: 21
+    display_name: '&b&l儲存升級 II（鐵）'
+    lore:
+      - '&7容量 ×4'
+      - '&7左鍵 1 個，右鍵 8 個'
+    left_click_commands:
+      - '[console] drawers give %panelkey_target% upgrade2 1'
+      - '[message] &b已給予儲存升級 II'
+    right_click_commands:
+      - '[console] drawers give %panelkey_target% upgrade2 8'
+      - '[message] &b已給予儲存升級 II x8'
+
+  'upgrade3':
+    material: GOLD_INGOT
+    slot: 22
+    display_name: '&b&l儲存升級 III（金）'
+    lore:
+      - '&7容量 ×8'
+      - '&7左鍵 1 個，右鍵 8 個'
+    left_click_commands:
+      - '[console] drawers give %panelkey_target% upgrade3 1'
+      - '[message] &b已給予儲存升級 III'
+    right_click_commands:
+      - '[console] drawers give %panelkey_target% upgrade3 8'
+      - '[message] &b已給予儲存升級 III x8'
+
+  'upgrade4':
+    material: DIAMOND
+    slot: 23
+    display_name: '&b&l儲存升級 IV（鑽石）'
+    lore:
+      - '&7容量 ×16'
+      - '&7左鍵 1 個，右鍵 8 個'
+    left_click_commands:
+      - '[console] drawers give %panelkey_target% upgrade4 1'
+      - '[message] &b已給予儲存升級 IV'
+    right_click_commands:
+      - '[console] drawers give %panelkey_target% upgrade4 8'
+      - '[message] &b已給予儲存升級 IV x8'
+
+  'upgrade5':
+    material: EMERALD
+    slot: 24
+    display_name: '&b&l儲存升級 V（綠寶石）'
+    lore:
+      - '&7容量 ×32'
+      - '&7左鍵 1 個，右鍵 8 個'
+    left_click_commands:
+      - '[console] drawers give %panelkey_target% upgrade5 1'
+      - '[message] &b已給予儲存升級 V'
+    right_click_commands:
+      - '[console] drawers give %panelkey_target% upgrade5 8'
+      - '[message] &b已給予儲存升級 V x8'
+
+  # ---------- 最下排 ----------
+  'choose_target':
+    material: PLAYER_HEAD
+    slot: 31
+    display_name: '&b&l選擇要給誰'
+    lore:
+      - '&7目前：&f%panelkey_target_label%'
+      - '&7點擊列出線上玩家'
+    left_click_commands:
+      - '[player] givetarget'
+
+  'back':
+    material: ARROW
+    slot: 35
+    display_name: '&7&l返回工具箱'
+    left_click_commands:
+      - '[openguimenu] toolbox'

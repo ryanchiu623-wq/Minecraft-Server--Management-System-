@@ -4,6 +4,7 @@
 Speaks both status protocols directly:
   Java    TCP  handshake(state=1) + status request  -> JSON
   Bedrock UDP  RakNet unconnected ping              -> semicolon-separated MOTD
+               (a NetherNet-only Geyser has no ping; see bedrock_local)
 
 Checks, in order: the local server, DNS, the public tunnels, an outside
 vantage point, and the published map.
@@ -161,6 +162,53 @@ def bedrock_status(host, port, timeout=6):
     online = fields[4] if len(fields) > 4 else "?"
     mx = fields[5] if len(fields) > 5 else "?"
     return True, f"{ver}  {online}/{mx} 人", latency
+
+
+def geyser_transport():
+    """Geyser's bedrock.transport: raknet, nethernet or both. Builds from
+    before NetherNet have no such key and speak RakNet."""
+    path = os.path.join(settings.server_dir(), "plugins", "Geyser-Spigot", "config.yml")
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            m = re.search(r"^\s+transport:\s*['\"]?(\w+)", fh.read(), re.M)
+    except OSError:
+        return "raknet"
+    return m.group(1).lower() if m else "raknet"
+
+
+def udp_listening(port):
+    """Whether anything holds UDP `port`, IPv4 or IPv6. Geyser binds [::],
+    which a test bind on 0.0.0.0 would not notice, so ask netstat."""
+    try:
+        out = subprocess.run(["netstat", "-an", "-p", "UDP"], capture_output=True,
+                             text=True, timeout=15, creationflags=NO_WINDOW).stdout
+        out += subprocess.run(["netstat", "-an", "-p", "UDPv6"], capture_output=True,
+                              text=True, timeout=15, creationflags=NO_WINDOW).stdout
+    except Exception:
+        return False
+    return any(line.split()[1].endswith(f":{port}")
+               for line in out.splitlines()
+               if line.strip().startswith("UDP") and len(line.split()) > 1)
+
+
+def bedrock_local():
+    """Is Geyser taking Bedrock players? Bedrock 26.60 dropped RakNet, and a
+    NetherNet-only Geyser answers no ping, so then the check is that its UDP
+    port is held and it registered with its signaling service since the
+    server last started (latest.log starts over with each start)."""
+    if geyser_transport() != "nethernet":
+        return bedrock_status("127.0.0.1", BE_LOCAL_PORT)
+    if not udp_listening(BE_LOCAL_PORT):
+        return False, f"UDP {BE_LOCAL_PORT} 沒有在聽", None
+    path = os.path.join(settings.server_dir(), "logs", "latest.log")
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            registered = any("Registered with the external signaling service" in l for l in fh)
+    except OSError:
+        return False, "讀不到伺服器日誌", None
+    if not registered:
+        return False, "NetherNet 還沒向訊號服務註冊", None
+    return True, "NetherNet 已註冊", None
 
 
 # ------------------------------------------------------------------ DNS / web
@@ -448,8 +496,8 @@ def main():
     print("\n本機（伺服器本身活著嗎）")
     ok, detail, lat = java_status("127.0.0.1", 25565)
     results.append(row("Java  127.0.0.1:25565", ok, detail, lat))
-    ok, detail, lat = bedrock_status("127.0.0.1", 19132)
-    results.append(row("基岩  127.0.0.1:19132", ok, detail, lat))
+    ok, detail, lat = bedrock_local()
+    results.append(row(f"基岩  127.0.0.1:{BE_LOCAL_PORT}", ok, detail, lat))
 
     print("\nDNS（網域指到正確的地方嗎）")
     if JAVA_VIA == "playit":

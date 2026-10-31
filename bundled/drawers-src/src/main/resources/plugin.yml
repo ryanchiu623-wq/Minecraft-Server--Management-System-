@@ -6,10 +6,12 @@ author: ryanchiu623
 description: Storage Drawers-style drawers built on barrels.
 commands:
   drawers:
-    description: 抽屜管理指令（管理員）
-    usage: /drawers <give|place|info>
-    permission: drawers.admin
+    description: 用材料換單格抽屜；管理員另有 give、place、info
+    usage: /drawers <buy|give|place|info>
 permissions:
+  drawers.buy:
+    description: /drawers buy
+    default: true
   drawers.admin:
     description: /drawers give、place、info
     default: op

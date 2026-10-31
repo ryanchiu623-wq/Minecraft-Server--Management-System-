@@ -95,6 +95,19 @@ items:
       - '[player] afk'
 
   # ---------- 下面一排 ----------
+  # 價格在 plugins/RyanDrawers/config.yml 的 buy:，改那裡的話這裡的說明也要跟著改。
+  'drawer_buy':
+    material: BARREL
+    slot: 20
+    display_name: '&6&l兌換中藥櫃'
+    lore:
+      - '&7用 3 個鐵錠換 1 個單格抽屜'
+      - '&7改過名的鐵錠不算'
+      - '&7選單不會關，可以一直按'
+      - '&8/drawers buy'
+    left_click_commands:
+      - '[player] drawers buy'
+
   'spawn':
     material: GRASS_BLOCK
     slot: 22
@@ -112,8 +125,28 @@ items:
     left_click_commands:
       - '[close]'
 
+  # 只有管理員看得到；其他人在這格看到的是外框
+  'admin_back':
+    material: ARROW
+    slot: 18
+    priority: 1
+    display_name: '&7&l返回管理面板'
+    view_requirement:
+      requirements:
+        perm:
+          type: has permission
+          permission: serverpanel.admin
+    left_click_commands:
+      - '[openguimenu] admin_panel'
+
   # ---------- 外框 ----------
   'filler':
     material: GRAY_STAINED_GLASS_PANE
-    slots: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 17, 18, 19, 20, 21, 23, 24, 25]
+    slots: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 17, 19, 21, 23, 24, 25]
+    display_name: ' '
+
+  'filler_18':
+    material: GRAY_STAINED_GLASS_PANE
+    slot: 18
+    priority: 2
     display_name: ' '

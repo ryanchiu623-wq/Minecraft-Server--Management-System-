@@ -307,7 +307,7 @@ class Console(tk.Tk):
         st = {}
         ok, detail, lat = probe.java_status("127.0.0.1", 25565)
         st["java"] = (ok, detail, lat)
-        st["bedrock_local"] = probe.bedrock_status("127.0.0.1", 19132)
+        st["bedrock_local"] = probe.bedrock_local()
         # playit for Java and cloudflared for the map can each be down alone.
         st["services"] = probe.tunnel_services()
         down = [n for n, r in st["services"] if not r]
@@ -383,7 +383,7 @@ class Console(tk.Tk):
 
         lines = [
             f"Java     127.0.0.1:25565   {jdetail}" + (f"   {jlat} ms" if jlat else ""),
-            f"基岩     127.0.0.1:19132   {st['bedrock_local'][1]}",
+            f"基岩     127.0.0.1:{probe.BE_LOCAL_PORT:<5}   {st['bedrock_local'][1]}",
             *[f"{n:<8} 服務              {'RUNNING' if r else 'STOPPED'}"
               for n, r in st["services"]],
             f"隧道     {st['bedrock_tunnel'][1]}",

@@ -405,7 +405,7 @@ class Monitor:
         ok, detail, lat = probe.java_status("127.0.0.1", 25565)
         st["java"] = {"ok": ok, "detail": detail, "ms": lat}
 
-        bok, bdetail, blat = probe.bedrock_status("127.0.0.1", 19132)
+        bok, bdetail, blat = probe.bedrock_local()
         st["bedrock"] = {"ok": bok, "detail": bdetail, "ms": blat}
 
         # One agent per path now (playit for Java, cloudflared for the map),

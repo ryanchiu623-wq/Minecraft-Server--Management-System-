@@ -46,6 +46,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
@@ -424,8 +425,10 @@ public final class DrawersSelfTest extends JavaPlugin {
         basics();
         breakAndPlace();
         creativeAndCrafting();
+        creativeFront();
         explosions();
         misc();
+        buying();
         orphans();
     }
 
@@ -804,6 +807,47 @@ public final class DrawersSelfTest extends JavaPlugin {
         });
     }
 
+    /**
+     * Creative breaks are instant and always start with a hit on the face, so
+     * a front hit that took nothing has to let the break through.
+     */
+    private void creativeFront() {
+        Block b = block(42);
+        BlockFace f = BlockFace.SOUTH;
+        FakePlayer[] p = new FakePlayer[1];
+        step(1, "創造模式從正面挖空抽屜", () -> {
+            place(b, 1, f);
+            p[0] = playerFacing(b, f);
+            p[0].mode = GameMode.CREATIVE;
+            leftClick(p[0], b, f, 0, 0);
+            BlockBreakEvent e = breakBlock(p[0], b);
+            check(!e.isCancelled(), "創造模式從正面一下就能挖掉空抽屜");
+            b.setType(Material.AIR);
+        });
+        step(2, "創造模式從正面挖有東西的抽屜", () -> {
+            eq(0, drops(b).size(), "創造模式從正面挖空抽屜不掉落");
+            place(b, 1, f);
+            p[0].storage.clear();
+            p[0].storage.setItem(0, new ItemStack(Material.DIRT, 64));
+            rightClick(p[0], b, f, 0, 0);
+            p[0].storage.clear();
+        });
+        step(CLICK_GAP, "創造模式正面第一下拿東西", () -> {
+            leftClick(p[0], b, f, 0, 0);
+            check(breakBlock(p[0], b).isCancelled(), "有拿到東西的那一下不會順便挖掉抽屜");
+            eq(64, count(p[0].storage, Material.DIRT), "那一下拿到一組泥土");
+            eq(0, contents(b).counts[0], "抽屜拿空了");
+        });
+        step(1, "創造模式正面第二下挖掉", () -> {
+            leftClick(p[0], b, f, 0, 0);
+            check(!breakBlock(p[0], b).isCancelled(), "拿空之後再打一下就挖掉");
+            b.setType(Material.AIR);
+        });
+        step(2, "創造模式正面挖掉之後", () -> {
+            eq(0, drops(b).size(), "拿空的抽屜在創造模式不掉落");
+        });
+    }
+
     private void explosions() {
         Block a = block(60);
         Block t = block(68);
@@ -894,6 +938,70 @@ public final class DrawersSelfTest extends JavaPlugin {
             eq(1, contents(sword).counts[0], "附魔劍不會混進普通劍那格");
             check(!p[0].hand().isEmpty(), "附魔劍還在手上");
         });
+    }
+
+    /** /drawers buy as the player menu runs it: 3 plain iron ingots for one single drawer (the default config). */
+    private void buying() {
+        step(1, "兌換：權限", () -> {
+            FakePlayer p = playerFacing(block(57), BlockFace.SOUTH);
+            p.storage.setItem(0, new ItemStack(Material.IRON_INGOT, 3));
+            command(p, "buy");
+            eq(3, count(p.storage, Material.IRON_INGOT), "沒有 drawers.buy 權限不能換");
+            p.permissions.add("drawers.buy");
+            command(p, "give", "DrawerTester", "quad");
+            eq(0, count(p.storage, Material.BARREL), "一般玩家不能用管理員的 give");
+            check(p.lastMessage().contains("沒有權限"), "一般玩家用 give 會說沒有權限（" + p.lastMessage() + "）");
+        });
+        step(1, "兌換：材料不夠", () -> {
+            FakePlayer p = playerFacing(block(57), BlockFace.SOUTH);
+            p.permissions.add("drawers.buy");
+            p.storage.setItem(0, new ItemStack(Material.IRON_INGOT, 2));
+            command(p, "buy");
+            eq(2, count(p.storage, Material.IRON_INGOT), "只有 2 個鐵錠時不會被拿走");
+            eq(0, count(p.storage, Material.BARREL), "只有 2 個鐵錠換不到抽屜");
+            check(p.lastMessage().contains("你身上有 2 個"), "會說還差多少（" + p.lastMessage() + "）");
+        });
+        step(1, "兌換：換到抽屜", () -> {
+            FakePlayer p = playerFacing(block(57), BlockFace.SOUTH);
+            p.permissions.add("drawers.buy");
+            ItemStack named = new ItemStack(Material.IRON_INGOT, 5);
+            ItemMeta meta = named.getItemMeta();
+            meta.displayName(net.kyori.adventure.text.Component.text("特別的鐵"));
+            named.setItemMeta(meta);
+            p.storage.setItem(0, named);
+            p.storage.setItem(3, new ItemStack(Material.IRON_INGOT, 2));
+            p.storage.setItem(7, new ItemStack(Material.IRON_INGOT, 2));
+            command(p, "buy");
+            eq(1, count(p.storage, Material.BARREL), "4 個普通鐵錠換到 1 個抽屜");
+            ItemStack got = null;
+            for (ItemStack s : p.storage.getContents()) {
+                if (s != null && s.getType() == Material.BARREL) {
+                    got = s;
+                }
+            }
+            check(got != null && got.hasItemMeta()
+                    && got.getItemMeta().getPersistentDataContainer().has(SLOTS), "換到的是抽屜，不是普通木桶");
+            eq(1, got == null ? -1 : read(got.getItemMeta().getPersistentDataContainer()).templates().length,
+                    "換到的是單格抽屜");
+            eq(5, p.storage.getItem(0) == null ? 0 : p.storage.getItem(0).getAmount(), "改過名的鐵錠一個都沒拿");
+            int plain = 0;
+            for (ItemStack s : p.storage.getContents()) {
+                if (s != null && s.isSimilar(new ItemStack(Material.IRON_INGOT))) {
+                    plain += s.getAmount();
+                }
+            }
+            eq(1, plain, "普通鐵錠剛好拿走 3 個（兩疊湊起來）");
+            command(p, "buy");
+            eq(1, count(p.storage, Material.BARREL), "剩 1 個普通鐵錠時不能再換");
+            ItemStack drawer = craft(Material.OAK_PLANKS, Material.OAK_PLANKS, Material.OAK_PLANKS,
+                    Material.OAK_PLANKS, Material.CHEST, Material.OAK_PLANKS,
+                    Material.OAK_PLANKS, Material.OAK_PLANKS, Material.OAK_PLANKS);
+            check(got != null && got.isSimilar(drawer), "換到的抽屜跟合成出來的可以疊在一起");
+        });
+    }
+
+    private void command(FakePlayer p, String... args) {
+        getServer().getPluginCommand("drawers").execute(p.player, "drawers", args);
     }
 
     /** A drawer removed behind the plugin's back (/setblock) loses its displays on the next chunk load. */

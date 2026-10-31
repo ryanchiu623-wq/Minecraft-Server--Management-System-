@@ -31,6 +31,18 @@ items:
     left_click_commands:
       - '[refresh]'
 
+  # Shift+F opens this panel for admins, so this is their way into the menu
+  # every other player gets.
+  'player_menu':
+    material: PLAYER_HEAD
+    slot: 6
+    display_name: '&a&l玩家選單'
+    lore:
+      - '&7回家、設家、傳送、AFK'
+      - '&7跟一般玩家按 Shift+F 看到的一樣'
+    left_click_commands:
+      - '[openguimenu] player_menu'
+
   'stations':
     material: CRAFTING_TABLE
     slot: 7

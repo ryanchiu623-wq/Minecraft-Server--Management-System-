@@ -4,6 +4,8 @@
 # 開啟方式：/toolbox 或 /tb　權限：serverpanel.toolbox
 # 指令一律寫 minecraft:give / minecraft:effect / minecraft:gamemode：EssentialsX 會接管同名的
 # 原版指令，它的 /give 看不懂 [enchantments=...] 這類物品組件，會整個失敗但選單照樣顯示「已給予」。
+# %player_name% 要靠 PlaceholderAPI 的 Player 擴充（2026-10-27 才裝），擴充不見時會原封不動送進指令而失敗。
+# 所以作用在按的人身上的按鈕用 [player]（能開這個選單的都是 OP），要給別人就用 %panelkey_target%。
 
 open_command:
   - toolbox
@@ -153,11 +155,11 @@ items:
   'player_head':
     material: PLAYER_HEAD
     slot: 15
-    display_name: '&f&l你的頭顱'
+    display_name: '&f&l玩家頭顱'
     lore:
-      - '&7帶你自己的皮膚'
+      - '&7帶收到的人自己的皮膚'
     left_click_commands:
-      - '[console] minecraft:give %panelkey_target% minecraft:player_head[profile="%player_name%"]'
+      - '[console] minecraft:give %panelkey_target% minecraft:player_head[profile="%panelkey_target%"]'
       - '[message] &f已給予頭顱'
 
   'stations':
@@ -169,6 +171,16 @@ items:
       - '&7不用放方塊就能開'
     left_click_commands:
       - '[openguimenu] stations'
+
+  'drawers':
+    material: BARREL
+    slot: 17
+    display_name: '&e&l中藥櫃'
+    lore:
+      - '&7三種抽屜和五種容量升級'
+      - '&7免費拿，給「選擇要給誰」選的人'
+    left_click_commands:
+      - '[openguimenu] drawers'
 
   # ---------- 第三排：超過上限的附魔（創造做不到） ----------
   'super_pickaxe':
@@ -240,9 +252,12 @@ items:
     lore:
       - '&3鋒利 · 橫掃 · 掠奪 · 火焰　全 255'
       - '&3攻速無冷卻，永不損壞'
+      - '&c一擊必殺：攻擊力 +2048（遊戲上限）'
       - '&8無擊退：怪物原地倒下，掉落物不噴飛'
     left_click_commands:
-      - '[console] minecraft:give %panelkey_target% minecraft:netherite_sword[custom_name={text:"玉髓劍",color:"aqua",bold:true,italic:false},lore=[{text:"以玉髓之心鍛成",color:"dark_aqua",italic:false},{text:"一擊，萬物俱寂",color:"gray",italic:false}],enchantments={"minecraft:sharpness":255,"minecraft:sweeping_edge":255,"minecraft:looting":255,"minecraft:fire_aspect":255},attribute_modifiers=[{type:"minecraft:attack_speed",amount:4,operation:"add_value",slot:"mainhand",id:"minecraft:jade_speed"}],unbreakable={},rarity="epic"]'
+      # attribute_modifiers replaces the sword's own +7 damage, so the damage
+      # modifier has to be listed here too. 2048 is the attribute's cap.
+      - '[console] minecraft:give %panelkey_target% minecraft:netherite_sword[custom_name={text:"玉髓劍",color:"aqua",bold:true,italic:false},lore=[{text:"以玉髓之心鍛成",color:"dark_aqua",italic:false},{text:"一擊，萬物俱寂",color:"gray",italic:false}],enchantments={"minecraft:sharpness":255,"minecraft:sweeping_edge":255,"minecraft:looting":255,"minecraft:fire_aspect":255},attribute_modifiers=[{type:"minecraft:attack_speed",amount:4,operation:"add_value",slot:"mainhand",id:"minecraft:jade_speed"},{type:"minecraft:attack_damage",amount:2048,operation:"add_value",slot:"mainhand",id:"minecraft:jade_damage"}],unbreakable={},rarity="epic"]'
       - '[message] &b已給予玉髓劍'
 
   # ---------- 第四排：無限持續藥水 ----------
@@ -304,7 +319,7 @@ items:
     slot: 36
     display_name: '&a&l創造模式'
     left_click_commands:
-      - '[console] minecraft:gamemode creative %player_name%'
+      - '[player] minecraft:gamemode creative'
       - '[message] &a已切換為創造模式'
 
   'gm_survival':
@@ -312,7 +327,7 @@ items:
     slot: 37
     display_name: '&c&l生存模式'
     left_click_commands:
-      - '[console] minecraft:gamemode survival %player_name%'
+      - '[player] minecraft:gamemode survival'
       - '[message] &c已切換為生存模式'
 
   'gm_spectator':
@@ -320,7 +335,7 @@ items:
     slot: 38
     display_name: '&7&l旁觀模式'
     left_click_commands:
-      - '[console] minecraft:gamemode spectator %player_name%'
+      - '[player] minecraft:gamemode spectator'
       - '[message] &7已切換為旁觀模式'
 
   'night_vision':
@@ -347,7 +362,7 @@ items:
     slot: 42
     display_name: '&f&l清除所有效果'
     left_click_commands:
-      - '[console] minecraft:effect clear %player_name%'
+      - '[player] minecraft:effect clear'
       - '[message] &f已清除所有狀態效果'
 
   'back':

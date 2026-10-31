@@ -2,14 +2,15 @@
 
 [繁體中文](README.md) · **English**
 
-What goes onto the server: two Paper plugins written for this toolkit and the DeluxeMenus menus. The installer lays down PanelKey and the menus; RyanDrawers you build yourself.
+What goes onto the server: two Paper plugins written for this toolkit, one Geyser extension and the DeluxeMenus menus. The installer lays down PanelKey and the menus; RyanDrawers and EmoteOffhand you build yourself.
 
 | Path | Contents |
 |---|---|
 | `PanelKey-1.7.0.jar` | PanelKey, built; this is what the installer uses |
 | `panelkey-src/` | PanelKey source |
 | `drawers-src/` | RyanDrawers source, and its self-test plugin in `selftest/` |
-| `deluxemenus/` | Menu YAML: `admin_panel`, `admin_stop_confirm`, `toolbox`, `stations`, `player_menu` |
+| `emoteoffhand-src/` | EmoteOffhand (Geyser extension) source |
+| `deluxemenus/` | Menu YAML: `admin_panel`, `admin_stop_confirm`, `toolbox`, `stations`, `player_menu`, `drawers` |
 
 ---
 
@@ -19,7 +20,7 @@ The in-game way into server management.
 
 | Command / action | What it does |
 |---|---|
-| Sneak + swap hands (Shift+F) | Opens the admin panel for `serverpanel.admin`, the player menu for everyone else |
+| Sneak + swap hands (Shift+F) | Opens the admin panel for `serverpanel.admin`, the player menu for everyone else. Bedrock has no swap-hands key; with EmoteOffhand it is sneak + emote |
 | `/menu` | Opens the admin panel (DeluxeMenus) |
 | `/spawn` | Back to spawn; open to every player |
 | `/mobile <station>` (`/mb`) | Portable workstations: crafting table, ender chest, anvil, enchanting table, grindstone, stonecutter, smithing table, loom, cartography table |
@@ -61,6 +62,8 @@ Drawers in the style of the Storage Drawers mod. The block is a barrel, and floa
 - Three drawers: single, two slots stacked, and 2×2. Crafted from planks around chests (any wood, mixed is fine).
 - Five upgrades: obsidian, iron, gold, diamond, emerald — ×2 / ×4 / ×8 / ×16 / ×32, and they add up.
 - Hoppers feed and drain them. Explosions and fire leave them alone. A front hit that would break one instantly is cancelled, so a click meant to take items never mines the drawer.
+- Players can trade 3 iron ingots for a single drawer from the player menu (`/drawers buy`, permission `drawers.buy`, open to everyone by default). The price is `buy:` in the config; renamed ingots never count.
+- Admins take drawers and upgrades for free from the "中藥櫃" page of the toolbox (`deluxemenus/drawers.yml`).
 - Admin commands: `/drawers give <player> <single|double|quad|upgrade1..5> [amount]`, `/drawers place <world> <x> <y> <z> <1|2|4> <facing>`, `/drawers info <world> <x> <y> <z>`.
 
 **Settings** (`plugins/RyanDrawers/config.yml`): base stacks per drawer type, upgrade multipliers, upgrades per drawer, whether recipes are on, how far the displays are drawn.
@@ -70,6 +73,16 @@ Drawers in the style of the Storage Drawers mod. The block is a barrel, and floa
 `drawers-src/selftest/` is a plugin for a test server only. A fake player hands RyanDrawers real events — right and left clicks, breaking, placing, menu clicks, explosions, fire, chunk loads — and the test checks the drawer's stored counts, its front displays and the fake player's inventory. An OP runs `/drawerstest` on the test server; each check is a `PASS` or `FAIL` line in the server log.
 
 It cannot see the screen, so how the displays look in game and on Bedrock still needs a person. **Do not install it on a live server**: it places blocks in the world to test with.
+
+---
+
+## EmoteOffhand
+
+Makes a Bedrock emote act as the Java swap-hands key (F). Bedrock has no such key, so Bedrock players could neither open the PanelKey menu (sneak + F) nor reload a QualityArmory gun with F.
+
+Geyser used to do this through its `emote-offhand-workaround` option; newer builds dropped it and leave it to extensions listening for `ClientEmoteEvent`. On each emote this one sends a swap-hands for the player, which the server sees exactly as a Java player's F. The emote still plays.
+
+To install, put the built jar in `plugins/Geyser-Spigot/extensions/` and restart the server (not `geyser reload`).
 
 ---
 
@@ -88,7 +101,7 @@ cp src/main/resources/*.yml build/classes/
 jar cf ../PanelKey-1.7.0.jar -C build/classes .
 ```
 
-RyanDrawers is the same without PlaceholderAPI; for `selftest/`, add the RyanDrawers jar to the classpath.
+RyanDrawers is the same without PlaceholderAPI; for `selftest/`, add the RyanDrawers jar to the classpath. EmoteOffhand needs only `plugins/Geyser-Spigot.jar` on the classpath; copy its `extension.yml` into `build/classes/` the same way.
 
 Replace `/c/mc-paper` with your own server's path. `--release 21` sets the class version, which any server on Java 21 or newer loads.
 

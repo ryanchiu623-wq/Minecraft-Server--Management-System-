@@ -101,9 +101,11 @@ final class DrawerListener implements Listener {
             }
         } else if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
             // Not cancelled: mining from the front still works, it just
-            // takes items with the first hit (see onBreak).
-            lastPunch.put(player.getUniqueId(), new Punch(block, Bukkit.getCurrentTick()));
-            leftClick(player, block, face, aim(player, block));
+            // takes items with the first hit (see onBreak). A hit that took
+            // nothing is just mining, so an empty drawer breaks like any block.
+            if (leftClick(player, block, face, aim(player, block))) {
+                lastPunch.put(player.getUniqueId(), new Punch(block, Bukkit.getCurrentTick()));
+            }
         }
     }
 
@@ -165,18 +167,20 @@ final class DrawerListener implements Listener {
         }
     }
 
-    private void leftClick(Player player, Block block, BlockFace face, Vector hit) {
+    /** Takes a stack (sneaking: one) from the slot hit; true if anything came out. */
+    private boolean leftClick(Player player, Block block, BlockFace face, Vector hit) {
         Barrel state = (Barrel) block.getState();
         DrawerData d = DrawerData.load(state);
         int slot = Displays.slotAt(block, face, hit, d.slots);
         if (d.templates[slot] == null) {
-            return;
+            return false;
         }
         ItemStack out = d.take(slot, player.isSneaking() ? 1 : d.templates[slot].getMaxStackSize());
         drawers.save(block, state, d);
         if (out != null) {
             Drawers.give(player, out);
         }
+        return out != null;
     }
 
     /** Where the player is looking on the block. Left-clicks carry no hit point of their own. */
@@ -192,9 +196,9 @@ final class DrawerListener implements Listener {
             return;
         }
         Player player = event.getPlayer();
-        // A front-face hit that breaks the drawer in the same tick is an
-        // instant break (creative, or a fast enough tool): that hit was meant
-        // to take items. Instant breaks have to come from the sides.
+        // A front-face hit that took items and breaks the drawer in the same
+        // tick is an instant break (creative, or a fast enough tool): that hit
+        // was meant to take items, not to mine.
         Punch punch = lastPunch.get(player.getUniqueId());
         if (punch != null && punch.block().equals(block) && punch.tick() == Bukkit.getCurrentTick()) {
             event.setCancelled(true);

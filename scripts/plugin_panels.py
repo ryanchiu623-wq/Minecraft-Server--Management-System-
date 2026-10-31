@@ -85,11 +85,13 @@ def F(name, label, kind, **extra):
 
 
 def A(id_, label, fields, cmds, mode="sync", danger=False, note="",
-      settle=1.5):
+      settle=1.5, handler=None):
     """mode: sync returns the RCON reply; async sends and lets the panel
-    re-read the plugin's files after `settle` seconds."""
+    re-read the plugin's files after `settle` seconds. A `handler` takes the
+    checked field values and does the whole job itself instead of `cmds`."""
     return {"id": id_, "label": label, "fields": fields, "cmds": cmds,
-            "mode": mode, "danger": danger, "note": note, "settle": settle}
+            "mode": mode, "danger": danger, "note": note, "settle": settle,
+            "handler": handler}
 
 
 def _clean(field, raw):
@@ -171,6 +173,7 @@ WG_FLAGS = [
 
 # --------------------------------------------------------------- catalogue
 P = F("player", "玩家", "player")
+PB = F("player", "基岩玩家名稱或 XUID", "player")
 
 PLUGINS = [
     {"key": "bluemap", "plugin": "BlueMap", "title": "BlueMap 網頁地圖",
@@ -274,7 +277,7 @@ PLUGINS = [
      ]},
 
     {"key": "floodgate", "plugin": "floodgate", "title": "白名單（Java＋基岩）",
-     "desc": "Java 玩家用一般白名單；基岩玩家要用 Floodgate 的 fwhitelist，名字不要加前面的點。",
+     "desc": "Java 玩家用一般白名單；基岩玩家填名稱（不要加前面的點）或 XUID。沒連過的基岩玩家請他先連一次再加。",
      "panel": "whitelist",
      "actions": [
          A("wl-on", "開啟白名單", [], ["whitelist on"]),
@@ -282,10 +285,11 @@ PLUGINS = [
            note="任何人都能進來"),
          A("java-add", "加入 Java 玩家", [P], ["whitelist add {player}"]),
          A("java-remove", "移除 Java 玩家", [P], ["whitelist remove {player}"]),
-         A("be-add", "加入基岩玩家", [P], ["fwhitelist add {player}"],
-           mode="async", settle=4),
-         A("be-remove", "移除基岩玩家", [P], ["fwhitelist remove {player}"],
-           mode="async", settle=4),
+         A("be-add", "加入基岩玩家", [PB], [],
+           note="填玩家名稱或 XUID（純數字）",
+           handler=lambda v: bedrock_whitelist_add(v["player"])),
+         A("be-remove", "移除基岩玩家", [PB], [],
+           handler=lambda v: bedrock_whitelist_remove(v["player"])),
      ]},
 
     {"key": "discordsrv", "plugin": "DiscordSRV", "title": "DiscordSRV 聊天橋接",
@@ -517,6 +521,8 @@ def run_action(key, action_id, args):
         raise BadInput("不認得的動作：%s" % action_id)
     values = {f["name"]: _clean(f, (args or {}).get(f["name"]))
               for f in action["fields"]}
+    if action["handler"]:
+        return dict(action["handler"](values), refresh=True)
     commands = [c.format(**values) for c in action["cmds"]]
     ok, replies = rcon.execute_each(commands)
     text = "\n".join(r for r in replies if r).strip()
@@ -1025,6 +1031,148 @@ def whitelist_data():
             "entries": [{"name": e.get("name", "?"),
                          "bedrock": e.get("uuid", "").startswith(FLOODGATE_PREFIX)}
                         for e in entries]}
+
+
+# Floodgate's `fwhitelist add <name>` runs async, so RCON never hears back,
+# and it only works when GeyserMC's global API already knows the player's
+# XUID - a player who never joined a Geyser server fails silently. So the
+# panel writes whitelist.json itself whenever it can work out the UUID, and
+# checks the file afterwards instead of trusting the command.
+_FLOODGATE_UUID = re.compile(re.escape(FLOODGATE_PREFIX) + r"[0-9a-f]{12}")
+
+
+def _floodgate_uuid(xuid):
+    """A Bedrock player's Floodgate UUID is their XUID in the low bits."""
+    h = "%032x" % int(xuid)
+    return "-".join((h[:8], h[8:12], h[12:16], h[16:20], h[20:]))
+
+
+def _whitelist_path():
+    return os.path.join(SERVER_DIR, "whitelist.json")
+
+
+def _read_whitelist():
+    with open(_whitelist_path(), encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def _write_whitelist(entries):
+    tmp = _whitelist_path() + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(entries, fh, indent=2, ensure_ascii=False)
+    os.replace(tmp, _whitelist_path())
+
+
+def _bedrock_entry(entries, name=None, uuid=None):
+    for e in entries:
+        u = e.get("uuid", "")
+        if uuid and u == uuid:
+            return e
+        if (name and u.startswith(FLOODGATE_PREFIX)
+                and e.get("name", "").lstrip(".").lower() == name.lower()):
+            return e
+    return None
+
+
+def _uuid_from_logs(name, max_files=60):
+    """Floodgate logs a Bedrock player's join, UUID included, before the
+    whitelist turns them away - so one attempt to connect is enough."""
+    logs = os.path.join(SERVER_DIR, "logs")
+    try:
+        old = sorted((f for f in os.listdir(logs) if f.endswith(".log.gz")),
+                     key=lambda f: os.path.getmtime(os.path.join(logs, f)),
+                     reverse=True)[:max_files]
+    except OSError:
+        old = []
+    who = re.compile(r"(?<![\w.])\.?" + re.escape(name) + r"(?!\w)", re.I)
+    for f in ["latest.log"] + old:
+        path = os.path.join(logs, f)
+        opener = gzip.open if f.endswith(".gz") else open
+        found = None
+        try:
+            with opener(path, "rt", encoding="utf-8", errors="replace") as fh:
+                for ln in fh:
+                    if "[floodgate]" in ln and who.search(ln):
+                        m = _FLOODGATE_UUID.search(ln)
+                        if m:
+                            found = m.group(0)
+        except OSError:
+            continue
+        if found:
+            return found
+    return None
+
+
+def bedrock_whitelist_add(raw):
+    name = raw.lstrip(".")
+    try:
+        entries = _read_whitelist()
+    except (OSError, ValueError):
+        return {"ok": False, "output": "讀不到 whitelist.json", "commands": []}
+    if name.isdigit():
+        uuid, how = _floodgate_uuid(name), "用 XUID 換算出 UUID"
+    else:
+        existing = _bedrock_entry(entries, name=name)
+        if existing:
+            return {"ok": True, "commands": [],
+                    "output": "%s 已經在白名單裡了。" % existing.get("name")}
+        uuid, how = _uuid_from_logs(name), "從伺服器記錄找到 UUID"
+
+    if uuid:
+        existing = _bedrock_entry(entries, uuid=uuid)
+        if existing:
+            return {"ok": True, "commands": [],
+                    "output": "%s 已經在白名單裡了。" % existing.get("name")}
+        entries.append({"uuid": uuid, "name": "." + name})
+        _write_whitelist(entries)
+        ok, _ = rcon.execute(["whitelist reload"])
+        done = _bedrock_entry(_read_whitelist(), uuid=uuid) is not None
+        out = ("已加入 .%s（%s：%s）。" % (name, how, uuid) if done
+               else "寫入 whitelist.json 失敗，請再試一次。")
+        if done and not ok:
+            out += "\n伺服器沒有回應 whitelist reload，重開之後才會生效。"
+        if done and name.isdigit():
+            out += "\n名單上會先顯示成 XUID，不影響進服。"
+        return {"ok": done, "output": out,
+                "commands": ["whitelist.json += .%s" % name, "whitelist reload"]}
+
+    # Never seen in the logs: Floodgate's own lookup is the last chance.
+    cmd = "fwhitelist add %s" % name
+    rcon.execute([cmd])
+    time.sleep(4)
+    try:
+        done = _bedrock_entry(_read_whitelist(), name=name) is not None
+    except (OSError, ValueError):
+        done = False
+    if done:
+        return {"ok": True, "output": "已加入 .%s（Floodgate 查到了 XUID）。" % name,
+                "commands": [cmd]}
+    return {"ok": False, "commands": [cmd], "output": (
+        "沒有加進去：伺服器記錄裡沒有 %s 連線過的紀錄，Floodgate 也查不到他的 XUID。\n"
+        "兩種做法：\n"
+        "1. 請玩家先連一次伺服器（會被白名單擋下），再按一次「加入基岩玩家」，"
+        "主控台會從記錄抓到他的 UUID。\n"
+        "2. 直接填他的 XUID（純數字）。" % name)}
+
+
+def bedrock_whitelist_remove(raw):
+    name = raw.lstrip(".")
+    try:
+        entries = _read_whitelist()
+    except (OSError, ValueError):
+        return {"ok": False, "output": "讀不到 whitelist.json", "commands": []}
+    target = _bedrock_entry(entries, uuid=_floodgate_uuid(name) if name.isdigit() else None,
+                            name=None if name.isdigit() else name)
+    if not target:
+        return {"ok": False, "commands": [],
+                "output": "白名單裡沒有基岩玩家 .%s。" % name}
+    _write_whitelist([e for e in entries if e is not target])
+    ok, _ = rcon.execute(["whitelist reload"])
+    out = "已移除 %s。" % target.get("name")
+    if not ok:
+        out += "\n伺服器沒有回應 whitelist reload，重開之後才會生效。"
+    return {"ok": True, "output": out,
+            "commands": ["whitelist.json -= %s" % target.get("name"), "whitelist reload"]}
 
 
 # ------------------------------------------------------- log-based panels

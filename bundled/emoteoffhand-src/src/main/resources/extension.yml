@@ -1,0 +1,6 @@
+id: emoteoffhand
+name: EmoteOffhand
+main: tw.ryanchiu.emoteoffhand.EmoteOffhand
+api: 2.12.0
+version: 1.0.0
+authors: [ryanchiu623]

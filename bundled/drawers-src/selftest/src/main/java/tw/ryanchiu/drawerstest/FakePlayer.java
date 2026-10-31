@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -20,6 +21,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.permissions.Permission;
 import org.bukkit.util.RayTraceResult;
 
 import net.kyori.adventure.text.Component;
@@ -42,6 +44,7 @@ final class FakePlayer {
     final List<String> actionBars = new ArrayList<>();
     final List<String> messages = new ArrayList<>();
     final Set<String> unhandled = new TreeSet<>();
+    final Set<String> permissions = new HashSet<>();
     private final UUID id = UUID.randomUUID();
     private final ClassLoader loader;
 
@@ -115,6 +118,10 @@ final class FakePlayer {
             case "closeInventory":
                 closed = true;
                 return null;
+            case "hasPermission":
+                return permissions.contains(args[0] instanceof Permission perm ? perm.getName() : args[0]);
+            case "isOp":
+                return false;
             case "discoverRecipe":
             case "isOnline":
             case "isValid":

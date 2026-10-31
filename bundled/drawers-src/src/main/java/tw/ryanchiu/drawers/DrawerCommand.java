@@ -14,8 +14,14 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
+ * /drawers buy - a player trades plain materials (config buy:) for a single
+ * drawer; the player menu's button runs this.
  * /drawers give - hand out drawers and upgrades.
  * /drawers place, info - build or inspect a drawer by coordinates, so it can
  * be tested over RCON with no player online.
@@ -24,6 +30,7 @@ final class DrawerCommand implements TabExecutor {
 
     private static final List<String> KINDS =
             List.of("single", "double", "quad", "upgrade1", "upgrade2", "upgrade3", "upgrade4", "upgrade5");
+    private static final List<String> ADMIN = List.of("give", "place", "info");
 
     private final Drawers drawers;
 
@@ -36,8 +43,14 @@ final class DrawerCommand implements TabExecutor {
         if (args.length == 0) {
             return false;
         }
+        String sub = args[0].toLowerCase(Locale.ROOT);
+        if (!sender.hasPermission(sub.equals("buy") ? "drawers.buy" : "drawers.admin")) {
+            sender.sendMessage(Component.text("你沒有權限用這個指令", NamedTextColor.RED));
+            return true;
+        }
         try {
-            switch (args[0].toLowerCase(Locale.ROOT)) {
+            switch (sub) {
+                case "buy" -> buy(sender);
                 case "give" -> give(sender, args);
                 case "place" -> place(sender, args);
                 case "info" -> info(sender, args);
@@ -49,6 +62,47 @@ final class DrawerCommand implements TabExecutor {
             sender.sendMessage("錯誤：" + e.getMessage());
         }
         return true;
+    }
+
+    private static void buy(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            throw new IllegalArgumentException("只有玩家能兌換");
+        }
+        Settings s = RyanDrawers.settings();
+        if (s.buyItem() == null) {
+            player.sendMessage(Component.text("目前不開放兌換抽屜", NamedTextColor.RED));
+            return;
+        }
+        ItemStack price = new ItemStack(s.buyItem());
+        Component priceName = Component.text(s.buyAmount() + " 個")
+                .append(Component.translatable(s.buyItem().translationKey()));
+        PlayerInventory inv = player.getInventory();
+        ItemStack[] contents = inv.getStorageContents();
+        int have = 0;
+        for (ItemStack item : contents) {
+            if (item != null && item.isSimilar(price)) {
+                have += item.getAmount();
+            }
+        }
+        if (have < s.buyAmount()) {
+            player.sendMessage(Component.text("需要 ", NamedTextColor.RED).append(priceName)
+                    .append(Component.text("，你身上有 " + have + " 個")));
+            return;
+        }
+        int left = s.buyAmount();
+        for (int i = 0; i < contents.length && left > 0; i++) {
+            ItemStack item = contents[i];
+            if (item == null || !item.isSimilar(price)) {
+                continue;
+            }
+            int take = Math.min(left, item.getAmount());
+            left -= take;
+            item.setAmount(item.getAmount() - take);
+            inv.setItem(i, item.getAmount() > 0 ? item : null);
+        }
+        Drawers.give(player, Items.drawer(1));
+        player.sendMessage(Component.text("用 ", NamedTextColor.GREEN).append(priceName)
+                .append(Component.text("換到 1 個" + Items.layoutName(1))));
     }
 
     private void give(CommandSender sender, String[] args) {
@@ -131,8 +185,13 @@ final class DrawerCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        boolean admin = sender.hasPermission("drawers.admin");
+        if (!admin && args.length > 1) {
+            return List.of();
+        }
         Stream<String> options = switch (args.length) {
-            case 1 -> Stream.of("give", "place", "info");
+            case 1 -> Stream.concat(sender.hasPermission("drawers.buy") ? Stream.of("buy") : Stream.empty(),
+                    admin ? ADMIN.stream() : Stream.empty());
             case 2 -> args[0].equalsIgnoreCase("give")
                     ? Bukkit.getOnlinePlayers().stream().map(Player::getName)
                     : Bukkit.getWorlds().stream().map(World::getName);
